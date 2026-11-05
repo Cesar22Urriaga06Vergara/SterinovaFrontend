@@ -1,0 +1,159 @@
+@import "tailwindcss";
+@config "../../tailwind.config.ts";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sterinova-dark: #0c4a4e;
+  --color-sterinova-orange: #e54d21;
+  --color-sterinova-teal: #188f95;
+  --color-sterinova-light: #f3f4f6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.pdf-render-host {
+  width: 215.9mm;
+}
+
+.pdf-document,
+.cotizacion-pdf,
+.certificate-pdf {
+  box-sizing: border-box;
+  width: 215.9mm;
+  min-height: 279.4mm;
+  margin: 0;
+  background: #fff;
+}
+
+.pdf-render-page {
+  width: 215.9mm;
+  min-height: 279.4mm;
+  margin: 0;
+  background: #fff;
+}
+
+.cotizacion-pdf {
+  color: #263746;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.cotizacion-pdf *,
+.cotizacion-pdf *::before,
+.cotizacion-pdf *::after {
+  box-sizing: border-box;
+}
+
+.certificate-pdf {
+  box-sizing: border-box;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.certificate-pdf *,
+.certificate-pdf *::before,
+.certificate-pdf *::after {
+  box-sizing: border-box;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+@page {
+  size: letter portrait;
+  margin: 0;
+}
+
+@media print {
+  html,
+  body {
+    width: 215.9mm;
+    min-height: 279.4mm;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .pdf-print-root,
+  .pdf-print-root * {
+    visibility: visible !important;
+  }
+
+  .pdf-print-root {
+    position: fixed !important;
+    inset: 0 !important;
+    display: block !important;
+    width: 215.9mm !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
+
+  .pdf-render-page {
+    position: static !important;
+    inset: auto !important;
+    width: 215.9mm !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .pdf-render-page.pdf-print-root {
+    position: static !important;
+    inset: auto !important;
+    overflow: visible !important;
+  }
+
+  .pdf-document {
+    width: 215.9mm !important;
+    min-height: 279.4mm !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .pdf-render-page .pdf-document {
+    page-break-after: auto;
+  }
+
+  .cotizacion-pdf {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .cotizacion-pdf table {
+    page-break-inside: auto;
+  }
+
+  .cotizacion-pdf thead {
+    display: table-header-group;
+  }
+
+  .cotizacion-pdf tfoot.quote-totals {
+    display: table-row-group;
+  }
+
+  .cotizacion-pdf tr {
+    page-break-inside: avoid;
+  }
+}
