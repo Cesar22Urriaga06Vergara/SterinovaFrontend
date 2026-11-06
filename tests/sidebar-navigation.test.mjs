@@ -23,16 +23,19 @@ const { outputText } = ts.transpileModule(source, {
 const compiledModule = { exports: {} };
 runInNewContext(outputText, { exports: compiledModule.exports });
 
-test("organiza rutas existentes en Maestros y Operación", () => {
+test("organiza rutas existentes y restringe Usuarios al rol Admin", () => {
   const sections = compiledModule.exports.navigationSections;
   const labels = sections.map((section) => section.title);
   const links = sections.flatMap((section) => section.links);
+  const usersLink = links.find((link) => link.href === "/usuarios");
 
   assert.ok(labels.includes("Maestros"));
   assert.ok(labels.includes("Operación"));
   assert.ok(links.some((link) => link.href === "/comercial/clientes"));
   assert.ok(links.some((link) => link.href === "/comercial/cotizaciones"));
-  assert.ok(links.every((link) => link.href !== "/usuarios"));
+  assert.ok(usersLink);
+  assert.equal(usersLink.roles.length, 1);
+  assert.equal(usersLink.roles[0], "Admin");
 });
 
 test("activa la ruta más específica dentro de módulos anidados", () => {

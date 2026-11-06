@@ -63,6 +63,8 @@ const serviceOptions = [
   ["INSTITUCIONAL_VAPOR", "Esterilización Institucional Vapor"],
   ["INSUMOS", "Insumos"],
   ["LAVANDERIA", "Lavandería Farmacéutica"],
+  ["FARMACEUTICO", "Farmacéutico"],
+  ["FABRICANTE", "Fabricante"],
 ];
 
 const today = new Date().toISOString().slice(0, 10);

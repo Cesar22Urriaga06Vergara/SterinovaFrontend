@@ -68,6 +68,28 @@ const serviceContent: Record<TipoServicioCotizacion, CotizacionPdfContent> = {
     ],
     pricingNote: "Precios antes de IVA (19%)",
   },
+  FARMACEUTICO: {
+    documentCode: "",
+    title: "COTIZACIÓN FARMACÉUTICA",
+    subtitle: "Cotización",
+    nitLabel: "NIT / C.C. / C.E. / OTRO:",
+    paragraphs: [
+      "En atención a su solicitud, presentamos esta cotización para los productos y servicios farmacéuticos descritos en el detalle.",
+      "A continuación, presentamos los conceptos y las condiciones comerciales correspondientes a su solicitud.",
+    ],
+    pricingNote: "Precios antes de IVA (19%).",
+  },
+  FABRICANTE: {
+    documentCode: "",
+    title: "COTIZACIÓN PARA FABRICANTE",
+    subtitle: "Cotización",
+    nitLabel: "NIT / C.C. / C.E. / OTRO:",
+    paragraphs: [
+      "En atención a su solicitud, presentamos esta cotización para los productos y servicios descritos en el detalle.",
+      "A continuación, presentamos los conceptos y las condiciones comerciales correspondientes a su solicitud.",
+    ],
+    pricingNote: "Precios antes de IVA (19%).",
+  },
 };
 
 export function getCotizacionPdfContent(

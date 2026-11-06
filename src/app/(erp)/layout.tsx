@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState, useSyncExternalStore } from "react";
+import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu } from "lucide-react";
 import { Sidebar } from "@/components/Sidebar";
@@ -21,6 +21,14 @@ function getServerAccessTokenSnapshot() {
   return false;
 }
 
+function getClientHydrationSnapshot() {
+  return true;
+}
+
+function getServerHydrationSnapshot() {
+  return false;
+}
+
 export default function ErpLayout({
   children,
 }: {
@@ -37,17 +45,31 @@ function AuthorizedErpLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const user = useStoredUser();
-  const [hydrated, setHydrated] = useState(false);
+  const hydrated = useSyncExternalStore(
+    subscribeToStorage,
+    getClientHydrationSnapshot,
+    getServerHydrationSnapshot,
+  );
   const hasAccessToken = useSyncExternalStore(
     subscribeToStorage,
     getAccessTokenSnapshot,
     getServerAccessTokenSnapshot,
   );
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    setHydrated(true);
-  }, []);
+    if (!mobileNavOpen) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      setMobileNavOpen(false);
+      menuButtonRef.current?.focus();
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [mobileNavOpen]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -68,26 +90,38 @@ function AuthorizedErpLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-sterinova-light">
+    <div className="flex min-h-screen flex-col bg-sterinova-light md:flex-row">
+      <a
+        href="#main-content"
+        className="sr-only z-50 rounded-control bg-white px-4 py-2 font-semibold text-sterinova-dark shadow focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+      >
+        Saltar al contenido principal
+      </a>
+      <div className="w-full border-b border-sterinova-dark/5 bg-white px-4 py-2 md:hidden">
+        <button
+          ref={menuButtonRef}
+          id="erp-menu-toggle"
+          type="button"
+          aria-controls="erp-sidebar"
+          aria-expanded={mobileNavOpen}
+          onClick={() => setMobileNavOpen((open) => !open)}
+          className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-sterinova-dark hover:bg-sterinova-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        >
+          <Menu className="h-5 w-5" aria-hidden />
+          Menú
+        </button>
+      </div>
       <Sidebar
         mobileOpen={mobileNavOpen}
         onNavigate={() => setMobileNavOpen(false)}
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="border-b border-sterinova-dark/5 bg-white px-4 py-2 md:hidden">
-          <button
-            type="button"
-            aria-controls="erp-sidebar"
-            aria-expanded={mobileNavOpen}
-            onClick={() => setMobileNavOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-sterinova-dark hover:bg-sterinova-light"
-          >
-            <Menu className="h-5 w-5" aria-hidden />
-            Menú
-          </button>
-        </div>
         <Header />
-        <main className="flex-1 overflow-auto bg-sterinova-light p-4 md:p-6">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="flex-1 overflow-auto bg-sterinova-light p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary md:p-6"
+        >
           {children}
         </main>
       </div>

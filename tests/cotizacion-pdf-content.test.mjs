@@ -124,6 +124,18 @@ for (const expected of contentByService) {
   });
 }
 
+test("renderiza los tipos FARMACEUTICO y FABRICANTE sin códigos de formato inventados", () => {
+  for (const [type, title] of [
+    ["FARMACEUTICO", "COTIZACIÓN FARMACÉUTICA"],
+    ["FABRICANTE", "COTIZACIÓN PARA FABRICANTE"],
+  ]) {
+    const content = compiledModule.exports.getCotizacionPdfContent(type);
+    assert.equal(content.title, title);
+    assert.equal(content.documentCode, "");
+    assert.equal(content.paragraphs.length, 2);
+  }
+});
+
 test("mantiene la ruta interna imprimible en flujo para admitir varias páginas", () => {
   assert.match(stylesheet, /\.pdf-render-page\.pdf-print-root\s*\{\s*position:\s*static/s);
 });

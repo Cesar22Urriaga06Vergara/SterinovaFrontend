@@ -24,4 +24,4 @@ Abre http://localhost:3000. La URL base del cliente API se configura con NEXT_PU
 
 ## Documentación
 
-Consulta el [índice de documentación](docs/README.md) para arquitectura, desarrollo local, módulos visibles y contexto del producto.
+Consulta [CONTRIBUTING.md](CONTRIBUTING.md) para commits, componentes, accesibilidad y pruebas; usa la [plantilla de pull request](.github/PULL_REQUEST_TEMPLATE.md) al proponer cambios. El [índice de documentación](docs/README.md) reúne arquitectura, desarrollo local, UI/UX y estado del proyecto.

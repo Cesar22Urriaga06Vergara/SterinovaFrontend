@@ -21,14 +21,14 @@ export function Header() {
           {user?.nombre ?? "Usuario"}
         </p>
         {user?.rol ? (
-          <p className="text-xs text-sterinova-teal">{user.rol}</p>
+          <p className="text-xs text-secondary">{user.rol}</p>
         ) : null}
       </div>
 
       <button
         type="button"
         onClick={handleLogout}
-        className="inline-flex items-center gap-2 rounded-lg border border-sterinova-dark/10 px-3 py-2 text-sm font-medium text-sterinova-dark transition hover:bg-sterinova-light"
+        className="inline-flex items-center gap-2 rounded-lg border border-sterinova-dark/10 px-3 py-2 text-sm font-medium text-sterinova-dark transition hover:bg-sterinova-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
       >
         <LogOut className="h-4 w-4" aria-hidden />
         Cerrar Sesión

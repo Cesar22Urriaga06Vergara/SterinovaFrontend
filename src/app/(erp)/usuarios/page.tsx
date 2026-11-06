@@ -8,6 +8,11 @@ import { useStoredUser } from "@/lib/stored-user-hook";
 import { ChangePasswordDialog, UserFormDialog } from "./UserDialogs";
 import { UsersTable } from "./UsersTable";
 import { blankUserForm, type UserForm, type UserRecord, userFullName } from "./types";
+import {
+  getPasswordValidationError,
+  type UserFormErrors,
+  validateUserForm,
+} from "@/lib/user-validation";
 
 function errorMessage(error: unknown, fallback: string): string {
   if (axios.isAxiosError(error)) {
@@ -28,28 +33,52 @@ export default function UsersPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<UserRecord | null>(null);
   const [form, setForm] = useState<UserForm>(blankUserForm);
+  const [fieldErrors, setFieldErrors] = useState<UserFormErrors>({});
   const [passwordUser, setPasswordUser] = useState<UserRecord | null>(null);
   const [newPassword, setNewPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+
+  const fetchUsers = useCallback(async () => {
+    const { data } = await api.get<UserRecord[]>("/users");
+    return data;
+  }, []);
 
   const loadUsers = useCallback(async () => {
     setPageError("");
     try {
-      const { data } = await api.get<UserRecord[]>("/users");
+      const data = await fetchUsers();
       setUsers(data);
     } catch (error) {
       setPageError(errorMessage(error, "No se pudieron cargar los usuarios."));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchUsers]);
 
   useEffect(() => {
-    void loadUsers();
-  }, [loadUsers]);
+    let active = true;
+    fetchUsers()
+      .then((data) => {
+        if (active) setUsers(data);
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setPageError(errorMessage(error, "No se pudieron cargar los usuarios."));
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [fetchUsers]);
 
   function openCreate() {
     setEditing(null);
     setForm(blankUserForm());
+    setFieldErrors({});
     setPageError("");
     setFormOpen(true);
   }
@@ -66,14 +95,26 @@ export default function UsersPage() {
       rol: user.rol,
       password: "",
     });
+    setFieldErrors({});
     setPageError("");
     setFormOpen(true);
   }
 
+  function updateForm(nextForm: UserForm, field?: keyof UserFormErrors) {
+    setForm(nextForm);
+    if (field) {
+      setFieldErrors((current) => ({ ...current, [field]: undefined }));
+    }
+  }
+
   async function saveUser(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSaving(true);
     setPageError("");
+    const errors = validateUserForm(form, Boolean(editing));
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    setSaving(true);
     const userData = {
       nombre: form.nombre.trim(),
       apellido: form.apellido.trim() || null,
@@ -115,8 +156,15 @@ export default function UsersPage() {
   async function savePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!passwordUser) return;
+    const validationError = getPasswordValidationError(newPassword);
+    if (validationError) {
+      setPasswordError(validationError);
+      return;
+    }
+
     setSaving(true);
     setPageError("");
+    setPasswordError("");
     try {
       await api.patch(`/users/${passwordUser.id}/password`, { password: newPassword });
       setNotice(`Se actualizó la contraseña de ${userFullName(passwordUser)}.`);
@@ -154,7 +202,12 @@ export default function UsersPage() {
         loading={loading}
         sessionUserId={sessionUser.id}
         onEdit={openEdit}
-        onChangePassword={(user) => { setPasswordUser(user); setNewPassword(""); setPageError(""); }}
+        onChangePassword={(user) => {
+          setPasswordUser(user);
+          setNewPassword("");
+          setPasswordError("");
+          setPageError("");
+        }}
         onToggleStatus={(user) => void toggleStatus(user)}
       />
 
@@ -162,23 +215,25 @@ export default function UsersPage() {
         <UserFormDialog
           editing={editing}
           form={form}
+          errors={fieldErrors}
           pageError={pageError}
           saving={saving}
-          onFormChange={setForm}
+          onFormChange={updateForm}
           onSubmit={(event) => void saveUser(event)}
-          onClose={() => setFormOpen(false)}
+          onClose={() => { setFormOpen(false); setFieldErrors({}); }}
         />
       ) : null}
 
       {passwordUser ? (
         <ChangePasswordDialog
           user={passwordUser}
+          passwordError={passwordError}
           password={newPassword}
           pageError={pageError}
           saving={saving}
-          onPasswordChange={setNewPassword}
+          onPasswordChange={(value) => { setNewPassword(value); setPasswordError(""); }}
           onSubmit={(event) => void savePassword(event)}
-          onClose={() => setPasswordUser(null)}
+          onClose={() => { setPasswordUser(null); setPasswordError(""); }}
         />
       ) : null}
     </div>

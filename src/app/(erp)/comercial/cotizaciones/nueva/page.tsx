@@ -1,10 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2 } from "lucide-react";
+import { LoaderCircle, Plus, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
+import { LoadingState } from "@/components/ui/states/LoadingState";
+import { getApiErrorMessage } from "@/lib/api-errors";
+import { notifyToast } from "@/components/ui/states/toast-events";
 import type { Cliente } from "@/lib/cliente-types";
 import { useStoredUser } from "@/lib/stored-user-hook";
 import {
@@ -41,23 +44,34 @@ export default function NuevaCotizacionPage() {
   const [items, setItems] = useState<DraftItem[]>([createEmptyItem()]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+  const submitLock = useRef(false);
+  const refreshLock = useRef(false);
 
   useEffect(() => {
     api
       .get<Cliente[]>("/clientes")
       .then(({ data }) => setClientes(data))
-      .catch(() => setError("No se pudieron cargar los clientes."))
+      .catch((loadError: unknown) =>
+        setError(getApiErrorMessage(loadError)),
+      )
       .finally(() => setLoading(false));
   }, []);
 
   async function refreshClientes() {
+    if (refreshLock.current) return;
+    refreshLock.current = true;
+    setRefreshing(true);
     setError("");
     try {
       const { data } = await api.get<Cliente[]>("/clientes");
       setClientes(data);
-    } catch {
-      setError("No se pudieron actualizar los clientes.");
+    } catch (refreshError) {
+      setError(getApiErrorMessage(refreshError));
+    } finally {
+      refreshLock.current = false;
+      setRefreshing(false);
     }
   }
 
@@ -103,6 +117,7 @@ export default function NuevaCotizacionPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitLock.current) return;
     setError("");
 
     if (!clienteId) {
@@ -123,6 +138,7 @@ export default function NuevaCotizacionPage() {
       return;
     }
 
+    submitLock.current = true;
     setSaving(true);
     try {
       await api.post("/cotizaciones", {
@@ -131,18 +147,18 @@ export default function NuevaCotizacionPage() {
         condiciones_comerciales: condiciones || undefined,
         items: payloadItems,
       });
+      notifyToast("Cotización guardada correctamente.", "success");
       router.push("/comercial/cotizaciones");
-    } catch {
-      setError("No se pudo guardar la cotización.");
+    } catch (saveError) {
+      setError(getApiErrorMessage(saveError));
     } finally {
+      submitLock.current = false;
       setSaving(false);
     }
   }
 
   if (loading) {
-    return (
-      <div className="text-sterinova-teal">Cargando formulario...</div>
-    );
+    return <LoadingState label="Cargando formulario de cotización..." />;
   }
 
   return (
@@ -152,7 +168,7 @@ export default function NuevaCotizacionPage() {
           Nueva Cotización
         </h1>
         <p className="mt-1 text-sterinova-teal">
-          Formato comercial Sterinova — 5 tipos de servicio.
+          Formato comercial Sterinova — 7 tipos de servicio.
         </p>
       </div>
 
@@ -205,9 +221,11 @@ export default function NuevaCotizacionPage() {
             <button
               type="button"
               onClick={() => void refreshClientes()}
-              className="font-semibold text-sterinova-teal underline"
+              disabled={refreshing}
+              aria-busy={refreshing}
+              className="font-semibold text-sterinova-teal underline disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Actualizar lista
+              {refreshing ? "Actualizando..." : "Actualizar lista"}
             </button>
           </div>
 
@@ -253,7 +271,7 @@ export default function NuevaCotizacionPage() {
             >
               {TIPOS_SERVICIO.map((tipo) => (
                 <option key={tipo.value} value={tipo.value}>
-                  {tipo.label}
+                  {tipo.label} · {tipo.prefix}
                 </option>
               ))}
             </select>
@@ -395,9 +413,17 @@ export default function NuevaCotizacionPage() {
           <button
             type="submit"
             disabled={saving || clientes.length === 0}
+            aria-busy={saving}
             className="rounded-lg bg-sterinova-orange px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-70"
           >
-            {saving ? "Guardando..." : "Guardar Cotización"}
+            {saving ? (
+              <span className="inline-flex items-center gap-2">
+                <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />
+                Guardando...
+              </span>
+            ) : (
+              "Guardar Cotización"
+            )}
           </button>
         </section>
       </form>

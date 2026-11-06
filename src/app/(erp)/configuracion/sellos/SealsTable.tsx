@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { ArrowDown, ArrowUp, BadgeCheck, ImagePlus, ShieldCheck, ShieldOff } from "lucide-react";
 
 export type SealRecord = {
@@ -55,7 +56,7 @@ export function SealsTable({
             ) : orderedSeals.map((seal, index) => (
               <tr key={seal.id} className="hover:bg-slate-50/70">
                 <td className="px-5 py-3">
-                  {imageUrls[seal.id] ? <img src={imageUrls[seal.id]} alt={`Sello ${seal.nombre_norma}`} className="h-14 w-20 rounded-md border border-slate-200 bg-white object-contain p-1" /> : <div className="flex h-14 w-20 items-center justify-center rounded-md border border-dashed border-slate-300 text-slate-400"><ImagePlus className="h-5 w-5" aria-hidden /></div>}
+                  {imageUrls[seal.id] ? <Image src={imageUrls[seal.id]} alt={`Sello ${seal.nombre_norma}`} width={80} height={56} unoptimized className="h-14 w-20 rounded-md border border-slate-200 bg-white object-contain p-1" /> : <div className="flex h-14 w-20 items-center justify-center rounded-md border border-dashed border-slate-300 text-slate-400"><ImagePlus className="h-5 w-5" aria-hidden /></div>}
                 </td>
                 <td className="px-5 py-4 font-semibold text-sterinova-dark">{seal.nombre_norma}</td>
                 <td className="px-5 py-4 text-slate-600">{seal.numero_licencia}</td>

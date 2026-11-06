@@ -17,6 +17,11 @@ function errorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
+async function fetchSeals(): Promise<SealRecord[]> {
+  const { data } = await api.get<SealRecord[]>("/sellos");
+  return data;
+}
+
 export default function CertificationSealsPage() {
   const user = useStoredUser();
   const [seals, setSeals] = useState<SealRecord[]>([]);
@@ -31,9 +36,9 @@ export default function CertificationSealsPage() {
   const [notice, setNotice] = useState("");
 
   const loadSeals = useCallback(async () => {
-    setError("");
     try {
-      const { data } = await api.get<SealRecord[]>("/sellos");
+      const data = await fetchSeals();
+      setError("");
       setSeals(data);
     } catch (loadError) {
       setError(errorMessage(loadError, "No se pudieron cargar los sellos."));
@@ -43,8 +48,26 @@ export default function CertificationSealsPage() {
   }, []);
 
   useEffect(() => {
-    void loadSeals();
-  }, [loadSeals]);
+    let active = true;
+    fetchSeals()
+      .then((data) => {
+        if (!active) return;
+        setError("");
+        setSeals(data);
+      })
+      .catch((loadError: unknown) => {
+        if (active) {
+          setError(errorMessage(loadError, "No se pudieron cargar los sellos."));
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;

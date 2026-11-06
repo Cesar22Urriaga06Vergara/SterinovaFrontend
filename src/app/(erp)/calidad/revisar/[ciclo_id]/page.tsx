@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Check, Download, LoaderCircle, X } from "lucide-react";
 import { api, downloadPdfFromBackend } from "@/lib/api";
+import { notifyToast } from "@/components/ui/states/toast-events";
 import type { CicloCalidad, CertificadoEsterilizacion } from "@/lib/calidad-types";
+import { getRejectReasonError } from "@/lib/calidad-validation";
 
 function errorMessage(error: unknown, fallback: string) {
   if (typeof error === "object" && error && "response" in error) {
@@ -70,11 +72,16 @@ export default function RevisarCicloPage() {
         password,
       });
       setIssuedCertificate(data);
+      notifyToast(
+        `Certificado ${data.consecutivo} emitido correctamente.`,
+        "success",
+      );
       setApprovalOpen(false);
       setPassword("");
       setSaving(false);
     } catch (cause) {
-      setError(errorMessage(cause, "No se pudo aprobar el ciclo. Verifica la contraseña y vuelve a intentarlo."));
+      const message = errorMessage(cause, "No se pudo aprobar el ciclo. Verifica la contraseña y vuelve a intentarlo.");
+      setError(message);
       setSaving(false);
     }
   }
@@ -98,10 +105,18 @@ export default function RevisarCicloPage() {
   async function handleReject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!ciclo) return;
+    const reasonError = getRejectReasonError(motivo);
+    if (reasonError) {
+      setError(reasonError);
+      return;
+    }
     setSaving(true);
     setError("");
     try {
-      await api.post("/calidad/rechazar", { ciclo_id: ciclo.id, motivo });
+      await api.post("/calidad/rechazar", {
+        ciclo_id: ciclo.id,
+        motivo: motivo.trim(),
+      });
       router.replace("/calidad");
     } catch (cause) {
       setError(errorMessage(cause, "No se pudo rechazar el ciclo."));
@@ -227,7 +242,7 @@ export default function RevisarCicloPage() {
 
       {approvalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4" role="presentation">
-          <form onSubmit={handleApprove} className="w-full max-w-md space-y-4 rounded-2xl bg-white p-6 shadow-2xl" aria-labelledby="approval-title">
+          <form onSubmit={handleApprove} role="dialog" aria-modal="true" className="w-full max-w-md space-y-4 rounded-2xl bg-white p-6 shadow-2xl" aria-labelledby="approval-title">
             <div>
               <h2 id="approval-title" className="text-xl font-bold text-sterinova-dark">Confirmar firma electrónica</h2>
               <p className="mt-1 text-sm text-slate-600">Vuelve a ingresar la contraseña del Coordinador de Calidad para aprobar el ciclo y emitir el certificado.</p>
@@ -235,7 +250,7 @@ export default function RevisarCicloPage() {
             {error ? <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">{error}</p> : null}
             <label className="block space-y-1.5 text-sm font-semibold text-slate-700">
               Contraseña de Calidad
-              <input autoFocus required type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-sterinova-teal focus:ring-2 focus:ring-sterinova-teal/20" />
+              <input autoFocus required maxLength={128} type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-sterinova-teal focus:ring-2 focus:ring-sterinova-teal/20" />
             </label>
             <div className="flex justify-end gap-3">
               <button type="button" onClick={() => { setApprovalOpen(false); setPassword(""); }} className="rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100">Cancelar</button>
@@ -250,7 +265,7 @@ export default function RevisarCicloPage() {
 
       {rejectOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4" role="presentation">
-          <form onSubmit={handleReject} className="w-full max-w-md space-y-4 rounded-2xl bg-white p-6 shadow-2xl" aria-labelledby="reject-title">
+          <form onSubmit={handleReject} role="dialog" aria-modal="true" className="w-full max-w-md space-y-4 rounded-2xl bg-white p-6 shadow-2xl" aria-labelledby="reject-title">
             <div>
               <h2 id="reject-title" className="text-xl font-bold text-sterinova-dark">Rechazar ciclo</h2>
               <p className="mt-1 text-sm text-slate-600">El motivo quedará registrado con tu identidad y fecha de revisión.</p>

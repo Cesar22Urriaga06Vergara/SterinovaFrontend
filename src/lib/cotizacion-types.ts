@@ -7,17 +7,34 @@ export type TipoServicioCotizacion =
   | "INSTITUCIONAL_ETO"
   | "INSTITUCIONAL_VAPOR"
   | "INSUMOS"
-  | "LAVANDERIA";
+  | "LAVANDERIA"
+  | "FARMACEUTICO"
+  | "FABRICANTE";
 
 export const TIPOS_SERVICIO: {
   value: TipoServicioCotizacion;
   label: string;
+  prefix: string;
 }[] = [
-  { value: "INDUSTRIAL_ETO", label: "Industrial EtO" },
-  { value: "INSTITUCIONAL_ETO", label: "Institucional EtO" },
-  { value: "INSTITUCIONAL_VAPOR", label: "Institucional Vapor" },
-  { value: "INSUMOS", label: "Insumos" },
-  { value: "LAVANDERIA", label: "Lavandería" },
+  { value: "INDUSTRIAL_ETO", label: "Industrial EtO", prefix: "COT-IND-" },
+  {
+    value: "INSTITUCIONAL_ETO",
+    label: "Institucional EtO",
+    prefix: "COT-CME-",
+  },
+  {
+    value: "INSTITUCIONAL_VAPOR",
+    label: "Institucional Vapor",
+    prefix: "COT-CME-",
+  },
+  { value: "INSUMOS", label: "Insumos", prefix: "COT-CMI-" },
+  { value: "LAVANDERIA", label: "Lavandería", prefix: "COT-LAV-" },
+  {
+    value: "FARMACEUTICO",
+    label: "Farmacéutico",
+    prefix: "COT-CEMFA-",
+  },
+  { value: "FABRICANTE", label: "Fabricante", prefix: "COT-CMED-" },
 ];
 
 export type CotizacionItem = {

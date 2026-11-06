@@ -68,6 +68,24 @@ const templateStyles: Record<Cotizacion["tipo_servicio"], TemplateStyle> = {
     topPadding: "12mm",
     bottomPadding: "10mm",
   },
+  FARMACEUTICO: {
+    accent: "#008000",
+    secondary: "#008000",
+    light: "#FFFFFF",
+    border: "#A6C9A6",
+    horizontalPadding: "20mm",
+    topPadding: "12mm",
+    bottomPadding: "10mm",
+  },
+  FABRICANTE: {
+    accent: "#365F91",
+    secondary: "#365F91",
+    light: "#FFFFFF",
+    border: "#A9B9D0",
+    horizontalPadding: "19mm",
+    topPadding: "12mm",
+    bottomPadding: "10mm",
+  },
 };
 
 const clientFields = [

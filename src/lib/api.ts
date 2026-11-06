@@ -1,4 +1,9 @@
 import axios from "axios";
+import { getApiErrorMessage } from "@/lib/api-errors";
+import {
+  notifyToast,
+  PENDING_TOAST_KEY,
+} from "@/components/ui/states/toast-events";
 
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
@@ -45,6 +50,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error: unknown) => {
+    if (axios.isCancel(error)) {
+      return Promise.reject(error);
+    }
+
     if (
       axios.isAxiosError(error) &&
       error.response?.status === 401 &&
@@ -52,8 +61,15 @@ api.interceptors.response.use(
     ) {
       window.localStorage.removeItem("access_token");
       window.localStorage.removeItem("user");
+      window.sessionStorage.setItem(
+        PENDING_TOAST_KEY,
+        "Tu sesión ha expirado, por favor ingresa de nuevo.",
+      );
       window.location.replace("/login");
+    } else if (axios.isAxiosError(error)) {
+      notifyToast(getApiErrorMessage(error), "error");
     }
+
     return Promise.reject(error);
   },
 );
