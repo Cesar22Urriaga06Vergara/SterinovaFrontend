@@ -46,6 +46,7 @@ export type CotizacionItem = {
 };
 
 export type Cotizacion = {
+  version?: number;
   id: number;
   consecutivo: string;
   fecha: string;
@@ -89,4 +90,8 @@ export function formatearMoneda(value: string | number): string {
 
 export function formatCurrency(value: string | number): string {
   return formatearMoneda(value);
+}
+
+export function isEditableDraft(quote: Cotizacion): boolean {
+  return quote.estado?.toUpperCase() === "BORRADOR" && !quote.fecha_emision;
 }

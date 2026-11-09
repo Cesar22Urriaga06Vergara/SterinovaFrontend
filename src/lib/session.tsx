@@ -65,9 +65,10 @@ export function useSession() {
 
 export function useQuoteHeaders(): Record<string, string> {
   const { current_scope } = useSession();
+  const scopeId = current_scope?.id;
   return useMemo(() => {
     const headers: Record<string, string> = {};
-    if (current_scope) headers["x-scope-id"] = String(current_scope.id);
+    if (scopeId) headers["x-scope-id"] = String(scopeId);
     return headers;
-  }, [current_scope]);
+  }, [scopeId]);
 }

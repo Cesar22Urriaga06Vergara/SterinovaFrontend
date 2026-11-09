@@ -24,7 +24,7 @@ function loadTypeScript(relativePath) {
 test("expone los siete tipos de cotización y sus prefijos del backend", () => {
   const { TIPOS_SERVICIO } = loadTypeScript("src/lib/cotizacion-types.ts");
   const quotePage = readFileSync(
-    path.join(root, "src/app/(erp)/comercial/cotizaciones/nueva/page.tsx"),
+    path.join(root, "src/components/cotizaciones/CotizacionForm.tsx"),
     "utf8",
   );
   const templatesPage = readFileSync(

@@ -6,6 +6,7 @@ import { BadgeCheck, CheckCircle2, Download, Eye, Plus, Send, X } from "lucide-r
 import { api, downloadPdfFromBackend } from "@/lib/api";
 import {
   Cotizacion,
+  isEditableDraft,
   formatCurrency,
   labelTipoServicio,
 } from "@/lib/cotizacion-types";
@@ -15,7 +16,7 @@ import type { PdfFormatMetadata } from "@/lib/pdf-render-data";
 import { useSession, useQuoteHeaders } from "@/lib/session";
 import { useStoredUser } from "@/lib/stored-user-hook";
 
-type CotizacionPreview = { data: Cotizacion; metadata: PdfFormatMetadata };
+type CotizacionPreview = { source: Cotizacion; data: Cotizacion; metadata: PdfFormatMetadata };
 
 function isEmitted(cotizacion: Cotizacion) {
   return Boolean(
@@ -128,6 +129,7 @@ export default function CotizacionesPage() {
           : null
       );
       setPreviewCotizacion({
+        source: cotizacion,
         data: previewData,
         metadata: formatMetadataFromSnapshot(data.formato as Record<string, unknown>),
       });
@@ -143,7 +145,7 @@ export default function CotizacionesPage() {
     setError("");
     setSuccess("");
     try {
-      await api.put(`/cotizaciones/${cotizacion.id}`, { estado: "APROBADA" }, { headers });
+      await api.post(`/cotizaciones/${cotizacion.id}/aprobar`, { version: cotizacion.version }, { headers });
       await loadCotizaciones();
     } catch {
       setError(`No se pudo aprobar ${cotizacion.consecutivo}.`);
@@ -217,6 +219,7 @@ export default function CotizacionesPage() {
                       <td className="px-4 py-3">{formatCurrency(cotizacion.total)}</td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-2">
+                          {can("cotizaciones.editar") && isEditableDraft(cotizacion) && <Link href={`/comercial/cotizaciones/${cotizacion.id}/editar`} className="rounded-lg border px-2.5 py-1.5 text-xs font-medium">Editar</Link>}
                           {!emitted ? (
                             <>
                               {can("cotizaciones.emitir") && <button
@@ -249,7 +252,7 @@ export default function CotizacionesPage() {
                               {downloadingId === cotizacion.id ? "Descargando..." : "Descargar PDF Oficial"}
                             </button>
                           ) : null}
-                          {can("cotizaciones.editar") && cotizacion.estado !== "APROBADA" && !emitted ? (
+                          {can("cotizaciones.editar") && isEditableDraft(cotizacion) ? (
                             <button
                               type="button"
                               onClick={() => void handleAprobar(cotizacion)}
@@ -278,6 +281,7 @@ export default function CotizacionesPage() {
               <h2 className="font-semibold text-sterinova-dark">Borrador · {previewCotizacion.data.consecutivo}</h2>
               <p className="text-xs text-slate-500">Vista previa. El PDF oficial se fija al emitir.</p>
             </div>
+            {can("cotizaciones.editar") && isEditableDraft(previewCotizacion.source) && <Link href={`/comercial/cotizaciones/${previewCotizacion.source.id}/editar`} className="rounded border px-3 py-2">Editar</Link>}
             <button type="button" onClick={() => setPreviewCotizacion(null)} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100" aria-label="Cerrar vista previa">
               <X className="h-5 w-5" aria-hidden />
             </button>
