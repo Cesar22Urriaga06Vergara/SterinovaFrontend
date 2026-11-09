@@ -12,6 +12,7 @@ import {
 import { CotizacionPDF } from "@/components/pdf/CotizacionPDF";
 import { cotizacionFromPdfSnapshot, formatMetadataFromSnapshot } from "@/lib/pdf-render-data";
 import type { PdfFormatMetadata } from "@/lib/pdf-render-data";
+import { useSession, useQuoteHeaders } from "@/lib/session";
 import { useStoredUser } from "@/lib/stored-user-hook";
 
 type CotizacionPreview = { data: Cotizacion; metadata: PdfFormatMetadata };
@@ -31,6 +32,8 @@ function formatDate(value: string) {
 
 export default function CotizacionesPage() {
   const sessionUser = useStoredUser();
+  const { can } = useSession();
+  const headers = useQuoteHeaders();
   const [cotizaciones, setCotizaciones] = useState<Cotizacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -44,7 +47,7 @@ export default function CotizacionesPage() {
     setLoading(true);
     setError("");
     try {
-      const { data } = await api.get<Cotizacion[]>("/cotizaciones");
+      const { data } = await api.get<Cotizacion[]>("/cotizaciones", { headers });
       setCotizaciones(data);
     } catch {
       setError("No se pudieron cargar las cotizaciones.");
@@ -56,7 +59,7 @@ export default function CotizacionesPage() {
   useEffect(() => {
     let active = true;
     api
-      .get<Cotizacion[]>("/cotizaciones")
+      .get<Cotizacion[]>("/cotizaciones", { headers })
       .then(({ data }) => {
         if (active) setCotizaciones(data);
       })
@@ -69,15 +72,16 @@ export default function CotizacionesPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [headers]);
 
   async function handleEmitir(cotizacion: Cotizacion) {
+    if (!can("cotizaciones.emitir")) return;
     setEmittingId(cotizacion.id);
     setError("");
     setSuccess("");
     try {
       const { data } = await api.post<Cotizacion>(
-        `/cotizaciones/${cotizacion.id}/emitir`,
+        `/cotizaciones/${cotizacion.id}/emitir`, undefined, { headers },
       );
       setSuccess(`Cotización ${data.consecutivo} emitida exitosamente.`);
       await loadCotizaciones();
@@ -95,6 +99,7 @@ export default function CotizacionesPage() {
       await downloadPdfFromBackend(
         `/cotizaciones/${cotizacion.id}/descargar`,
         `${cotizacion.consecutivo}.pdf`,
+        headers,
       );
     } catch {
       setError(`No se pudo descargar el PDF oficial de ${cotizacion.consecutivo}.`);
@@ -104,10 +109,11 @@ export default function CotizacionesPage() {
   }
 
   async function handlePreview(cotizacion: Cotizacion) {
+    if (!can("cotizaciones.previsualizar")) return;
     setDownloadingId(cotizacion.id);
     setError("");
     try {
-      const { data } = await api.get<Record<string, unknown>>(`/cotizaciones/${cotizacion.id}/previsualizar`);
+      const { data } = await api.get<Record<string, unknown>>(`/cotizaciones/${cotizacion.id}/previsualizar`, { headers });
       const previewData = cotizacionFromPdfSnapshot(data);
       previewData.creador = cotizacion.creador ?? (
         sessionUser?.id && cotizacion.creador_id === sessionUser.id
@@ -137,7 +143,7 @@ export default function CotizacionesPage() {
     setError("");
     setSuccess("");
     try {
-      await api.put(`/cotizaciones/${cotizacion.id}`, { estado: "APROBADA" });
+      await api.put(`/cotizaciones/${cotizacion.id}`, { estado: "APROBADA" }, { headers });
       await loadCotizaciones();
     } catch {
       setError(`No se pudo aprobar ${cotizacion.consecutivo}.`);
@@ -156,13 +162,13 @@ export default function CotizacionesPage() {
               Aprueba y emite documentos oficiales para las órdenes de logística.
             </p>
           </div>
-          <Link
+          {can("cotizaciones.crear") && <Link
             href="/comercial/cotizaciones/nueva"
             className="inline-flex items-center gap-2 rounded-lg bg-sterinova-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
           >
             <Plus className="h-4 w-4" aria-hidden />
             Nueva Cotización
-          </Link>
+          </Link>}
         </div>
 
         {error ? (
@@ -213,7 +219,7 @@ export default function CotizacionesPage() {
                         <div className="flex flex-wrap gap-2">
                           {!emitted ? (
                             <>
-                              <button
+                              {can("cotizaciones.emitir") && <button
                                 type="button"
                                 onClick={() => void handleEmitir(cotizacion)}
                                 disabled={emittingId !== null || downloadingId !== null}
@@ -221,8 +227,8 @@ export default function CotizacionesPage() {
                               >
                                 <Send className="h-3.5 w-3.5" aria-hidden />
                                 {emittingId === cotizacion.id ? "Emitiendo..." : "Emitir Cotización"}
-                              </button>
-                              <button
+                              </button>}
+                              {can("cotizaciones.previsualizar") && <button
                                 type="button"
                                 onClick={() => void handlePreview(cotizacion)}
                                 disabled={downloadingId !== null || emittingId !== null}
@@ -230,9 +236,9 @@ export default function CotizacionesPage() {
                               >
                                 <Eye className="h-3.5 w-3.5" aria-hidden />
                                 {downloadingId === cotizacion.id ? "Abriendo..." : "Ver Borrador"}
-                              </button>
+                              </button>}
                             </>
-                          ) : (
+                          ) : can("cotizaciones.descargar") ? (
                             <button
                               type="button"
                               onClick={() => void handleOfficialDownload(cotizacion)}
@@ -242,8 +248,8 @@ export default function CotizacionesPage() {
                               <Download className="h-3.5 w-3.5" aria-hidden />
                               {downloadingId === cotizacion.id ? "Descargando..." : "Descargar PDF Oficial"}
                             </button>
-                          )}
-                          {cotizacion.estado !== "APROBADA" && !emitted ? (
+                          ) : null}
+                          {can("cotizaciones.editar") && cotizacion.estado !== "APROBADA" && !emitted ? (
                             <button
                               type="button"
                               onClick={() => void handleAprobar(cotizacion)}

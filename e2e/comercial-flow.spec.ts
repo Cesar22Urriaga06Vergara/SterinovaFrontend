@@ -1,5 +1,15 @@
 import { expect, test } from "@playwright/test";
 
+// Identity is now loaded from the backend instead of the stored user fixture.
+test.beforeEach(async ({ page }) => {
+  await page.route("http://localhost:3001/auth/me", route => route.fulfill({ json: {
+    user: { id: 1, nombre: "Ana", rol: "Admin" },
+    permissions: ["cotizaciones.ver", "cotizaciones.crear", "cotizaciones.previsualizar", "cotizaciones.descargar", "cotizaciones.editar", "cotizaciones.emitir"],
+    current_scope: { id: 2, name: "Comercial", kind: "DEPARTMENT" },
+    available_scopes: [{ id: 2, name: "Comercial", kind: "DEPARTMENT" }], capabilities: [],
+  } }));
+});
+
 test("inicia sesión y guarda una cotización con los siete tipos disponibles", async ({
   page,
 }) => {

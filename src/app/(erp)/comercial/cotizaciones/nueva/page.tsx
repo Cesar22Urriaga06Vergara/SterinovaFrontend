@@ -9,6 +9,7 @@ import { LoadingState } from "@/components/ui/states/LoadingState";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { notifyToast } from "@/components/ui/states/toast-events";
 import type { Cliente } from "@/lib/cliente-types";
+import { useSession, useQuoteHeaders } from "@/lib/session";
 import { useStoredUser } from "@/lib/stored-user-hook";
 import {
   TIPOS_SERVICIO,
@@ -35,6 +36,8 @@ function createEmptyItem(): DraftItem {
 export default function NuevaCotizacionPage() {
   const router = useRouter();
   const sessionUser = useStoredUser();
+  const { can, current_scope } = useSession();
+  const headers = useQuoteHeaders();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [clienteId, setClienteId] = useState("");
   const [tipoServicio, setTipoServicio] = useState<TipoServicioCotizacion>(
@@ -117,7 +120,7 @@ export default function NuevaCotizacionPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (submitLock.current) return;
+    if (submitLock.current || !can("cotizaciones.crear") || !current_scope || current_scope.kind === "GLOBAL") return;
     setError("");
 
     if (!clienteId) {
@@ -146,7 +149,7 @@ export default function NuevaCotizacionPage() {
         tipo_servicio: tipoServicio,
         condiciones_comerciales: condiciones || undefined,
         items: payloadItems,
-      });
+      }, { headers });
       notifyToast("Cotización guardada correctamente.", "success");
       router.push("/comercial/cotizaciones");
     } catch (saveError) {
@@ -156,6 +159,8 @@ export default function NuevaCotizacionPage() {
       setSaving(false);
     }
   }
+
+  if (!current_scope || current_scope.kind === "GLOBAL") return <p role="alert">Selecciona un ámbito operativo para crear la cotización.</p>;
 
   if (loading) {
     return <LoadingState label="Cargando formulario de cotización..." />;

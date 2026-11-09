@@ -15,8 +15,9 @@ export const api = axios.create({
 export async function downloadPdfFromBackend(
   endpoint: string,
   filename: string,
+  headers?: Record<string, string>,
 ): Promise<void> {
-  const { data } = await api.get<Blob>(endpoint, { responseType: "blob" });
+  const { data } = await api.get<Blob>(endpoint, { responseType: "blob", headers });
   const objectUrl = URL.createObjectURL(data);
   const link = document.createElement("a");
   link.href = objectUrl;

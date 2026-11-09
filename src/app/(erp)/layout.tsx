@@ -6,6 +6,7 @@ import { Menu } from "lucide-react";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
 import { canAccessPath, getRoleHomePath } from "@/lib/navigation";
+import { SessionProvider, useSession } from "@/lib/session";
 import { useStoredUser } from "@/lib/stored-user-hook";
 
 function subscribeToStorage(callback: () => void) {
@@ -36,7 +37,7 @@ export default function ErpLayout({
 }) {
   return (
     <Suspense fallback={<LayoutLoading />}>
-      <AuthorizedErpLayout>{children}</AuthorizedErpLayout>
+      <SessionProvider><AuthorizedErpLayout>{children}</AuthorizedErpLayout></SessionProvider>
     </Suspense>
   );
 }
@@ -45,6 +46,9 @@ function AuthorizedErpLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const user = useStoredUser();
+  const { can } = useSession();
+  const quoteRoute = pathname === "/comercial/cotizaciones" || pathname.startsWith("/comercial/cotizaciones/");
+  const routeAllowed = quoteRoute ? can(pathname.endsWith("/nueva") ? "cotizaciones.crear" : "cotizaciones.ver") : canAccessPath(pathname, user.rol);
   const hydrated = useSyncExternalStore(
     subscribeToStorage,
     getClientHydrationSnapshot,
@@ -77,12 +81,12 @@ function AuthorizedErpLayout({ children }: { children: React.ReactNode }) {
       router.replace("/login");
       return;
     }
-    if (!canAccessPath(pathname, user.rol)) {
+    if (!routeAllowed) {
       router.replace(getRoleHomePath(user.rol));
     }
-  }, [hasAccessToken, hydrated, pathname, router, user]);
+  }, [hasAccessToken, hydrated, pathname, router, user, routeAllowed]);
 
-  const canRenderRoute = user ? canAccessPath(pathname, user.rol) : false;
+  const canRenderRoute = routeAllowed;
   if (!hydrated || !hasAccessToken || !user || !canRenderRoute) {
     return (
       <LayoutLoading />
