@@ -38,6 +38,8 @@ export function cotizacionFromPdfSnapshot(snapshot: Snapshot): Cotizacion {
     items: (quote.items ?? []) as Cotizacion['items'],
     subtotal: (quote.subtotal ?? 0) as Cotizacion['subtotal'],
     iva: (quote.iva ?? 0) as Cotizacion['iva'],
+    iva_tasa: quote.iva_tasa as Cotizacion['iva_tasa'],
+    iva_version_id: quote.iva_version_id as Cotizacion['iva_version_id'],
     total: (quote.total ?? 0) as Cotizacion['total'],
     condiciones_comerciales: typeof quote.condiciones_comerciales === 'string' ? quote.condiciones_comerciales : null,
   };

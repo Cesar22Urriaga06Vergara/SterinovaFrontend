@@ -2,6 +2,9 @@ import { expect, test } from "@playwright/test";
 
 // Identity is now loaded from the backend instead of the stored user fixture.
 test.beforeEach(async ({ page }) => {
+  await page.route("http://localhost:3001/cotizaciones/iva-vigente", route => route.fulfill({ json: {
+    id: 1, version: 1, tasa: "0.190000", vigente_desde: "2026-11-09T00:00:00Z",
+  } }));
   await page.route("http://localhost:3001/auth/me", route => route.fulfill({ json: {
     user: { id: 1, nombre: "Ana", rol: "Admin" },
     permissions: ["cotizaciones.ver", "cotizaciones.crear", "cotizaciones.previsualizar", "cotizaciones.descargar", "cotizaciones.editar", "cotizaciones.emitir"],

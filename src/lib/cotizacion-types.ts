@@ -56,6 +56,8 @@ export type Cotizacion = {
   hash_pdf?: string | null;
   subtotal: string | number;
   iva: string | number;
+  iva_tasa?: string | null;
+  iva_version_id?: number | null;
   total: string | number;
   condiciones_comerciales?: string | null;
   cliente_id: number;

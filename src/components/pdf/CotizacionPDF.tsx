@@ -1,4 +1,5 @@
 "use client";
+import { ivaLabel } from "@/lib/iva";
 
 import { forwardRef, type CSSProperties } from "react";
 import Image from "next/image";
@@ -312,7 +313,7 @@ export const CotizacionPDF = forwardRef<HTMLDivElement, Props>(
             <tfoot className="quote-totals">
               {[
                 ["SUBTOTAL", data.subtotal],
-                ["IVA (19%)", data.iva],
+                [ivaLabel(data.iva_tasa), data.iva],
                 ["TOTAL", data.total],
               ].map(([label, amount]) => (
                 <tr key={label} className="break-inside-avoid">

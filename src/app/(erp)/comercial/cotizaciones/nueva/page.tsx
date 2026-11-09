@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LoaderCircle, Plus, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
+import axios from "axios";
+import { ivaLabel, quoteAmounts, type IvaVersion } from "@/lib/iva";
 import { LoadingState } from "@/components/ui/states/LoadingState";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { notifyToast } from "@/components/ui/states/toast-events";
@@ -39,6 +41,7 @@ export default function NuevaCotizacionPage() {
   const { can, current_scope } = useSession();
   const headers = useQuoteHeaders();
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [tax, setTax] = useState<IvaVersion | null>(null);
   const [clienteId, setClienteId] = useState("");
   const [tipoServicio, setTipoServicio] = useState<TipoServicioCotizacion>(
     "INDUSTRIAL_ETO",
@@ -53,14 +56,16 @@ export default function NuevaCotizacionPage() {
   const refreshLock = useRef(false);
 
   useEffect(() => {
-    api
-      .get<Cliente[]>("/clientes")
-      .then(({ data }) => setClientes(data))
+    Promise.all([
+      api.get<Cliente[]>("/clientes"),
+      api.get<IvaVersion>("/cotizaciones/iva-vigente", { headers }),
+    ])
+      .then(([customers, rate]) => { setClientes(customers.data); setTax(rate.data); })
       .catch((loadError: unknown) =>
         setError(getApiErrorMessage(loadError)),
       )
       .finally(() => setLoading(false));
-  }, []);
+  }, [headers]);
 
   async function refreshClientes() {
     if (refreshLock.current) return;
@@ -92,15 +97,15 @@ export default function NuevaCotizacionPage() {
           ...item,
           cantidad,
           valor_unitario,
-          valor_total: cantidad * valor_unitario,
+          valor_total: Number((cantidad * valor_unitario).toFixed(2)),
         };
       }),
     [items],
   );
 
-  const subtotal = computedItems.reduce((sum, item) => sum + item.valor_total, 0);
-  const iva = subtotal * 0.19;
-  const total = subtotal + iva;
+  const { subtotal, iva, total } = tax
+    ? quoteAmounts(computedItems, tax.tasa)
+    : { subtotal: 0, iva: 0, total: 0 };
 
   function updateItem(key: string, field: keyof DraftItem, value: string) {
     setItems((prev) =>
@@ -120,7 +125,7 @@ export default function NuevaCotizacionPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (submitLock.current || !can("cotizaciones.crear") || !current_scope || current_scope.kind === "GLOBAL") return;
+    if (submitLock.current || !tax || !can("cotizaciones.crear") || !current_scope || current_scope.kind === "GLOBAL") return;
     setError("");
 
     if (!clienteId) {
@@ -149,11 +154,18 @@ export default function NuevaCotizacionPage() {
         tipo_servicio: tipoServicio,
         condiciones_comerciales: condiciones || undefined,
         items: payloadItems,
+        iva_version_esperada_id: tax.id,
       }, { headers });
       notifyToast("Cotización guardada correctamente.", "success");
       router.push("/comercial/cotizaciones");
     } catch (saveError) {
       setError(getApiErrorMessage(saveError));
+      if (axios.isAxiosError(saveError) && saveError.response?.status === 409) {
+        try {
+          const { data } = await api.get<IvaVersion>("/cotizaciones/iva-vigente", { headers });
+          setTax(data);
+        } catch { setTax(null); }
+      }
     } finally {
       submitLock.current = false;
       setSaving(false);
@@ -391,7 +403,7 @@ export default function NuevaCotizacionPage() {
               <dd className="font-medium">{formatCurrency(subtotal)}</dd>
             </div>
             <div className="flex justify-between text-sterinova-dark">
-              <dt>IVA (19%)</dt>
+              <dt>{tax ? ivaLabel(tax.tasa) : "IVA no disponible"}</dt>
               <dd className="font-medium">{formatCurrency(iva)}</dd>
             </div>
             <div className="flex justify-between border-t border-sterinova-dark/10 pt-2 text-base font-bold text-sterinova-orange">
@@ -417,7 +429,7 @@ export default function NuevaCotizacionPage() {
           </button>
           <button
             type="submit"
-            disabled={saving || clientes.length === 0}
+            disabled={saving || !tax || clientes.length === 0}
             aria-busy={saving}
             className="rounded-lg bg-sterinova-orange px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-70"
           >
