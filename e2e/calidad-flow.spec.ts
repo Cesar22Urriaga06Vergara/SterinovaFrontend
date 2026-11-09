@@ -11,6 +11,9 @@ test.beforeEach(async ({ page }) => {
 });
 
 const pendingCycle = {
+  protocolo_version:{id:1,version:1,metodo:'ETO',especificaciones_json:{filas:
+    ['temperatura','humedad','presion','tiempo_exposicion','tiempo_aireacion'].map(parametro=>({parametro,unidad:null,opciones:['Especificacion registrada'],aplicable:true}))}},
+  fecha_esterilizacion:'2026-11-06',
   id: 21,
   orden_id: 7,
   orden: {
@@ -35,6 +38,23 @@ const pendingCycle = {
   fecha_proceso: "2026-11-06T12:00:00.000Z",
   estado: "PENDIENTE_CALIDAD",
 };
+
+test('No cumple impide emitir y queda incluido al rechazar',async({page})=>{
+  await seedSession(page);
+  await page.route('http://localhost:3001/calidad/ciclos/21',route=>route.fulfill({json:pendingCycle}));
+  await page.route('http://localhost:3001/calidad/pendientes',route=>route.fulfill({json:[]}));
+  await page.route('http://localhost:3001/certificados',route=>route.fulfill({json:[]}));
+  await page.route('http://localhost:3001/calidad/rechazar',route=>route.fulfill({json:{id:21}}));
+  await page.goto('/calidad/revisar/21');
+  await page.getByLabel('Especificación de Temperatura',{exact:true}).selectOption('0');
+  await page.getByLabel('Evaluación de Temperatura',{exact:true}).selectOption('NO_CUMPLE');
+  await expect(page.getByRole('button',{name:'Aprobar y Emitir Certificado'})).toBeDisabled();
+  await page.getByRole('button',{name:'Rechazar',exact:true}).click();
+  await page.getByLabel('Motivo del rechazo').fill('No cumple con la especificación revisada');
+  const sent=page.waitForRequest(r=>r.url().endsWith('/calidad/rechazar')&&r.method()==='POST');
+  await page.getByRole('button',{name:'Confirmar rechazo'}).click();
+  expect((await sent).postDataJSON()).toMatchObject({evaluaciones:[{parametro:'temperatura',criterio:'NO_CUMPLE',opcion:0}]});
+});
 
 async function seedSession(page: import("@playwright/test").Page) {
   await page.addInitScript(() => {
@@ -119,6 +139,9 @@ test("aprueba un ciclo de Calidad con contraseña y confirma con toast", async (
   await page.getByRole("link", { name: /Revisar/ }).click();
   await expect(page).toHaveURL(/\/calidad\/revisar\/21$/);
   await expect(page.getByRole("heading", { name: "Orden OS-0007" })).toBeVisible();
+  await expect(page.getByRole('button',{name:'Aprobar y Emitir Certificado'})).toBeDisabled();
+  for(const select of await page.locator('select[aria-label^="Especificaci"]').all())await select.selectOption('0');
+  for(const select of await page.locator('select[aria-label^="Evaluaci"]').all())await select.selectOption('CUMPLE');
   await page
     .getByRole("button", { name: "Aprobar y Emitir Certificado" })
     .click();

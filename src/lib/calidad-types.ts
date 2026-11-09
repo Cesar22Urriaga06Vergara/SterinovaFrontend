@@ -27,6 +27,7 @@ export type CertificadoEsterilizacion = {
   created_at: string;
   aprobado_at: string | null;
   fecha_emision?: string | null;
+  fecha_esterilizacion?:string|null;
   fecha_vencimiento?: string | null;
   pdf_url?: string | null;
   hash_pdf?: string | null;

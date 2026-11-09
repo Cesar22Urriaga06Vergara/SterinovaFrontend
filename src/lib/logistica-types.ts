@@ -1,3 +1,4 @@
+import type { MaterialRecibido } from './operational-types';
 import { Cotizacion } from "./cotizacion-types";
 
 export type EstadoOrdenServicio =
@@ -9,6 +10,9 @@ export type EstadoOrdenServicio =
   | "CANCELADO";
 
 export type OrdenServicio = {
+  version: number;
+  metodo_esterilizacion?: "ETO"|"VAPOR"|null;
+  materiales?: MaterialRecibido[];
   id: number;
   consecutivo: string;
   cotizacion_id: number;

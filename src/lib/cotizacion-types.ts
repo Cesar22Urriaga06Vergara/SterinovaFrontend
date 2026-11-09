@@ -1,3 +1,4 @@
+import type { FrozenSeal } from './operational-types';
 import type { ClienteDatosDocumento } from "./cliente-types";
 
 export type { Cliente } from "./cliente-types";
@@ -46,6 +47,7 @@ export type CotizacionItem = {
 };
 
 export type Cotizacion = {
+  sellos?:{icontec:FrozenSeal};
   version?: number;
   id: number;
   consecutivo: string;

@@ -1,3 +1,4 @@
+import type { ProtocoloVersion,DocumentPerson } from './operational-types';
 import { OrdenServicio } from "./logistica-types";
 
 export type MetodoEsterilizacion = "ETO" | "VAPOR";
@@ -9,12 +10,16 @@ export type CicloEsterilizacion = {
   equipo: string;
   metodo: MetodoEsterilizacion;
   operador_id: number;
-  operador: { id: number; nombre: string };
+  operador: DocumentPerson;
+  fecha_esterilizacion?: string|null;
+  protocolo_version_id?:number|null;
+  protocolo_version?:ProtocoloVersion|null;
+  tiempo_secado?:number|string|null;
   temperatura: number;
-  humedad: number;
-  presion: number;
+  humedad: number|null;
+  presion: number|null;
   tiempo_exposicion: number;
-  tiempo_aireacion: number;
+  tiempo_aireacion: number|null;
   control_biologico: string;
   control_quimico: string;
   fecha_proceso: string;

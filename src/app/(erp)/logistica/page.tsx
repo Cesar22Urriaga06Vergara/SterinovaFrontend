@@ -2,8 +2,15 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Plus, X } from "lucide-react";
+import { MaterialesEditor } from "@/components/logistica/MaterialesEditor";
+import { nuevoMaterial, validarMateriales } from "@/lib/operational-forms";
+import type { MaterialRecibido } from "@/lib/operational-types";
 import { api } from "@/lib/api";
-import { Cotizacion, formatCurrency, labelTipoServicio } from "@/lib/cotizacion-types";
+import {
+  Cotizacion,
+  formatCurrency,
+  labelTipoServicio,
+} from "@/lib/cotizacion-types";
 import {
   ESTADO_COLORES,
   ESTADO_LABELS,
@@ -12,6 +19,12 @@ import {
 } from "@/lib/logistica-types";
 
 export default function LogisticaPage() {
+  const [materiales, setMateriales] = useState<MaterialRecibido[]>([
+    nuevoMaterial(),
+  ]);
+  const [editOrder, setEditOrder] = useState<OrdenServicio | null>(null);
+  const [metodo, setMetodo] = useState("");
+  const [conflict, setConflict] = useState(false);
   const [ordenes, setOrdenes] = useState<OrdenServicio[]>([]);
   const [aprobadas, setAprobadas] = useState<Cotizacion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,27 +80,48 @@ export default function LogisticaPage() {
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const validation = validarMateriales(materiales);
+    if (validation) {
+      setError(validation);
+      return;
+    }
     setSaving(true);
     setError("");
     try {
-      await api.post("/logistica/ordenes", {
-        cotizacion_id: Number(cotizacionId),
-        fecha_programada: fechaProgramada,
-        conductor_asignado: conductor || undefined,
-        vehiculo_placa: placa || undefined,
-        observaciones: observaciones || undefined,
-      });
+      if (editOrder)
+        await api.patch(`/logistica/ordenes/${editOrder.id}/materiales`, {
+          version: editOrder.version,
+          materiales,
+          metodo_esterilizacion: metodo || undefined,
+        });
+      else
+        await api.post("/logistica/ordenes", {
+          materiales,
+          metodo_esterilizacion: metodo || undefined,
+          cotizacion_id: Number(cotizacionId),
+          fecha_programada: fechaProgramada,
+          conductor_asignado: conductor || undefined,
+          vehiculo_placa: placa || undefined,
+          observaciones: observaciones || undefined,
+        });
       setModalOpen(false);
+      setEditOrder(null);
+      setMateriales([nuevoMaterial()]);
       setCotizacionId("");
       setFechaProgramada("");
       setConductor("");
       setPlaca("");
       setObservaciones("");
       await refreshData();
-    } catch {
+    } catch (cause) {
+      const response = (
+        cause as { response?: { status?: number; data?: { message?: string } } }
+      ).response;
       setError(
-        "No se pudo generar la orden. Verifique que la cotización esté APROBADA y sin orden previa.",
+        response?.data?.message ||
+          "No se pudo guardar la orden. Verifique los datos recibidos.",
       );
+      if (response?.status === 409) setConflict(true);
     } finally {
       setSaving(false);
     }
@@ -118,7 +152,14 @@ export default function LogisticaPage() {
         </div>
         <button
           type="button"
-          onClick={() => setModalOpen(true)}
+          onClick={() => {
+            setEditOrder(null);
+            setConflict(false);
+            setMateriales([nuevoMaterial()]);
+            setMetodo("");
+            setError("");
+            setModalOpen(true);
+          }}
           className="inline-flex items-center gap-2 rounded-lg bg-sterinova-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
         >
           <Plus className="h-4 w-4" aria-hidden />
@@ -148,15 +189,21 @@ export default function LogisticaPage() {
           <tbody className="divide-y divide-sterinova-dark/5">
             {loading ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-sterinova-teal">
+                <td
+                  colSpan={7}
+                  className="px-4 py-8 text-center text-sterinova-teal"
+                >
                   Cargando...
                 </td>
               </tr>
             ) : ordenes.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-sterinova-teal">
-                  No hay órdenes de servicio. Aprueba una cotización y genera una
-                  orden.
+                <td
+                  colSpan={7}
+                  className="px-4 py-8 text-center text-sterinova-teal"
+                >
+                  No hay órdenes de servicio. Aprueba una cotización y genera
+                  una orden.
                 </td>
               </tr>
             ) : (
@@ -164,12 +211,15 @@ export default function LogisticaPage() {
                 const action = nextEstadoAction(orden.estado);
                 return (
                   <tr key={orden.id} className="text-sterinova-dark">
-                    <td className="px-4 py-3 font-medium">{orden.consecutivo}</td>
+                    <td className="px-4 py-3 font-medium">
+                      {orden.consecutivo}
+                    </td>
                     <td className="px-4 py-3">
                       {orden.cotizacion?.cliente?.razon_social ?? "-"}
                     </td>
                     <td className="px-4 py-3">
-                      {orden.cotizacion?.consecutivo ?? `#${orden.cotizacion_id}`}
+                      {orden.cotizacion?.consecutivo ??
+                        `#${orden.cotizacion_id}`}
                     </td>
                     <td className="px-4 py-3">
                       {new Date(
@@ -186,7 +236,27 @@ export default function LogisticaPage() {
                     <td className="px-4 py-3">
                       {orden.conductor_asignado ?? "Sin asignar"}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="space-y-2 px-4 py-3">
+                      {!["PROCESADO", "CANCELADO"].includes(orden.estado) ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditOrder(orden);
+                            setConflict(false);
+                            setError("");
+                            setMateriales(
+                              orden.materiales?.length
+                                ? orden.materiales.map((m) => ({ ...m }))
+                                : [nuevoMaterial()],
+                            );
+                            setMetodo(orden.metodo_esterilizacion ?? "");
+                            setModalOpen(true);
+                          }}
+                          className="block text-xs font-semibold text-sterinova-teal"
+                        >
+                          Editar material recibido
+                        </button>
+                      ) : null}
                       {action ? (
                         <button
                           type="button"
@@ -209,10 +279,19 @@ export default function LogisticaPage() {
 
       {modalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-sterinova-dark/50 p-4">
-          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={
+              editOrder ? "Editar material recibido" : "Generar orden"
+            }
+            className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl"
+          >
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-bold text-sterinova-dark">
-                Generar Orden de Recolección
+                {editOrder
+                  ? `Material recibido: ${editOrder.consecutivo}`
+                  : "Generar Orden de Recolecci\u00f3n"}
               </h2>
               <button
                 type="button"
@@ -225,82 +304,133 @@ export default function LogisticaPage() {
             </div>
 
             <form onSubmit={handleCreate} className="space-y-4">
-              <label className="block text-sm">
-                <span className="mb-1 block font-medium text-sterinova-dark">
-                  Cotización aprobada
-                </span>
-                <select
-                  required
-                  value={cotizacionId}
-                  onChange={(e) => setCotizacionId(e.target.value)}
-                  className="w-full rounded-lg border border-sterinova-dark/20 bg-sterinova-light px-3 py-2 text-sterinova-dark outline-none focus:border-sterinova-teal focus:ring-2 focus:ring-sterinova-teal/30"
+              {!editOrder ? (
+                <>
+                  <label className="block text-sm">
+                    <span className="mb-1 block font-medium text-sterinova-dark">
+                      Cotización aprobada
+                    </span>
+                    <select
+                      required
+                      value={cotizacionId}
+                      onChange={(e) => {
+                        setCotizacionId(e.target.value);
+                        const tipo = aprobadas.find(
+                          (q) => q.id === Number(e.target.value),
+                        )?.tipo_servicio;
+                        setMetodo(
+                          tipo?.endsWith("_ETO")
+                            ? "ETO"
+                            : tipo?.endsWith("_VAPOR")
+                              ? "VAPOR"
+                              : "",
+                        );
+                      }}
+                      className="w-full rounded-lg border border-sterinova-dark/20 bg-sterinova-light px-3 py-2 text-sterinova-dark outline-none focus:border-sterinova-teal focus:ring-2 focus:ring-sterinova-teal/30"
+                    >
+                      <option value="">Seleccione...</option>
+                      {aprobadas.map((cotizacion) => (
+                        <option key={cotizacion.id} value={cotizacion.id}>
+                          {cotizacion.consecutivo} —{" "}
+                          {cotizacion.cliente?.razon_social ?? "Cliente"} —{" "}
+                          {labelTipoServicio(cotizacion.tipo_servicio)} —{" "}
+                          {formatCurrency(cotizacion.total)}
+                        </option>
+                      ))}
+                    </select>
+                    {aprobadas.length === 0 ? (
+                      <p className="mt-1 text-xs text-sterinova-teal">
+                        No hay cotizaciones APROBADAS disponibles. Aprueba una
+                        en Comercial primero.
+                      </p>
+                    ) : null}
+                  </label>
+
+                  <label className="block text-sm">
+                    <span className="mb-1 block font-medium text-sterinova-dark">
+                      Fecha programada
+                    </span>
+                    <input
+                      required
+                      type="date"
+                      value={fechaProgramada}
+                      onChange={(e) => setFechaProgramada(e.target.value)}
+                      className="w-full rounded-lg border border-sterinova-dark/20 bg-sterinova-light px-3 py-2 text-sterinova-dark outline-none focus:border-sterinova-teal focus:ring-2 focus:ring-sterinova-teal/30"
+                    />
+                  </label>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="block text-sm">
+                      <span className="mb-1 block font-medium text-sterinova-dark">
+                        Conductor (opcional)
+                      </span>
+                      <input
+                        value={conductor}
+                        onChange={(e) => setConductor(e.target.value)}
+                        className="w-full rounded-lg border border-sterinova-dark/20 bg-sterinova-light px-3 py-2 text-sterinova-dark outline-none focus:border-sterinova-teal focus:ring-2 focus:ring-sterinova-teal/30"
+                      />
+                    </label>
+                    <label className="block text-sm">
+                      <span className="mb-1 block font-medium text-sterinova-dark">
+                        Placa (opcional)
+                      </span>
+                      <input
+                        value={placa}
+                        onChange={(e) => setPlaca(e.target.value)}
+                        className="w-full rounded-lg border border-sterinova-dark/20 bg-sterinova-light px-3 py-2 text-sterinova-dark outline-none focus:border-sterinova-teal focus:ring-2 focus:ring-sterinova-teal/30"
+                      />
+                    </label>
+                  </div>
+
+                  <label className="block text-sm">
+                    <span className="mb-1 block font-medium text-sterinova-dark">
+                      Observaciones (opcional)
+                    </span>
+                    <textarea
+                      rows={2}
+                      value={observaciones}
+                      onChange={(e) => setObservaciones(e.target.value)}
+                      className="w-full rounded-lg border border-sterinova-dark/20 bg-sterinova-light px-3 py-2 text-sterinova-dark outline-none focus:border-sterinova-teal focus:ring-2 focus:ring-sterinova-teal/30"
+                    />
+                  </label>
+                </>
+              ) : null}
+              {error ? (
+                <p role="alert" className="text-sm text-red-700">
+                  {error}
+                </p>
+              ) : null}
+              {conflict ? (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await refreshData();
+                    setModalOpen(false);
+                    setConflict(false);
+                  }}
+                  className="text-sm font-bold text-sterinova-teal"
                 >
-                  <option value="">Seleccione...</option>
-                  {aprobadas.map((cotizacion) => (
-                    <option key={cotizacion.id} value={cotizacion.id}>
-                      {cotizacion.consecutivo} —{" "}
-                      {cotizacion.cliente?.razon_social ?? "Cliente"} —{" "}
-                      {labelTipoServicio(cotizacion.tipo_servicio)} —{" "}
-                      {formatCurrency(cotizacion.total)}
-                    </option>
-                  ))}
+                  Recargar órdenes antes de volver a editar
+                </button>
+              ) : null}
+              <label className="block text-sm">
+                Método de esterilización
+                <select
+                  aria-label="Método de la orden"
+                  value={metodo}
+                  onChange={(e) => setMetodo(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+                >
+                  <option value="">No aplica</option>
+                  <option value="ETO">EtO</option>
+                  <option value="VAPOR">Vapor</option>
                 </select>
-                {aprobadas.length === 0 ? (
-                  <p className="mt-1 text-xs text-sterinova-teal">
-                    No hay cotizaciones APROBADAS disponibles. Aprueba una en
-                    Comercial primero.
-                  </p>
-                ) : null}
               </label>
-
-              <label className="block text-sm">
-                <span className="mb-1 block font-medium text-sterinova-dark">
-                  Fecha programada
-                </span>
-                <input
-                  required
-                  type="date"
-                  value={fechaProgramada}
-                  onChange={(e) => setFechaProgramada(e.target.value)}
-                  className="w-full rounded-lg border border-sterinova-dark/20 bg-sterinova-light px-3 py-2 text-sterinova-dark outline-none focus:border-sterinova-teal focus:ring-2 focus:ring-sterinova-teal/30"
-                />
-              </label>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="block text-sm">
-                  <span className="mb-1 block font-medium text-sterinova-dark">
-                    Conductor (opcional)
-                  </span>
-                  <input
-                    value={conductor}
-                    onChange={(e) => setConductor(e.target.value)}
-                    className="w-full rounded-lg border border-sterinova-dark/20 bg-sterinova-light px-3 py-2 text-sterinova-dark outline-none focus:border-sterinova-teal focus:ring-2 focus:ring-sterinova-teal/30"
-                  />
-                </label>
-                <label className="block text-sm">
-                  <span className="mb-1 block font-medium text-sterinova-dark">
-                    Placa (opcional)
-                  </span>
-                  <input
-                    value={placa}
-                    onChange={(e) => setPlaca(e.target.value)}
-                    className="w-full rounded-lg border border-sterinova-dark/20 bg-sterinova-light px-3 py-2 text-sterinova-dark outline-none focus:border-sterinova-teal focus:ring-2 focus:ring-sterinova-teal/30"
-                  />
-                </label>
-              </div>
-
-              <label className="block text-sm">
-                <span className="mb-1 block font-medium text-sterinova-dark">
-                  Observaciones (opcional)
-                </span>
-                <textarea
-                  rows={2}
-                  value={observaciones}
-                  onChange={(e) => setObservaciones(e.target.value)}
-                  className="w-full rounded-lg border border-sterinova-dark/20 bg-sterinova-light px-3 py-2 text-sterinova-dark outline-none focus:border-sterinova-teal focus:ring-2 focus:ring-sterinova-teal/30"
-                />
-              </label>
-
+              <MaterialesEditor
+                value={materiales}
+                onChange={setMateriales}
+                disabled={saving || conflict}
+              />
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
@@ -311,10 +441,16 @@ export default function LogisticaPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={saving || aprobadas.length === 0}
+                  disabled={
+                    saving || conflict || (!editOrder && aprobadas.length === 0)
+                  }
                   className="rounded-lg bg-sterinova-orange px-4 py-2 text-sm font-semibold text-white disabled:opacity-70"
                 >
-                  {saving ? "Generando..." : "Crear Orden"}
+                  {saving
+                    ? "Guardando..."
+                    : editOrder
+                      ? "Guardar materiales"
+                      : "Crear Orden"}
                 </button>
               </div>
             </form>

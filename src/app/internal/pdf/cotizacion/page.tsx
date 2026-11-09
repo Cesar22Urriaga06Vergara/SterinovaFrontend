@@ -1,3 +1,4 @@
+import { LegacyCotizacionPDF } from '@/components/pdf/LegacyCotizacionPDF';
 import { Suspense } from 'react';
 import { headers } from 'next/headers';
 import { connection } from 'next/server';
@@ -27,9 +28,10 @@ async function RenderCotizacionDocument() {
 
   const snapshot = decodeSnapshot(token, secret);
   const formato = snapshot.formato as Record<string, unknown>;
+  const Renderer=snapshot.schema_version===2?CotizacionPDF:LegacyCotizacionPDF;
   return (
     <main className="pdf-print-root pdf-render-page">
-      <CotizacionPDF
+      <Renderer
         data={cotizacionFromPdfSnapshot(snapshot)}
         metadata={formatMetadataFromSnapshot(formato)}
       />

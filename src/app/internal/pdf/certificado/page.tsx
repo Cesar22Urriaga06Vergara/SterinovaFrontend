@@ -1,3 +1,4 @@
+import { LegacyCertificadoPDF } from '@/components/pdf/LegacyCertificadoPDF';
 import { Suspense } from 'react';
 import { headers } from 'next/headers';
 import { connection } from 'next/server';
@@ -26,9 +27,10 @@ async function RenderCertificadoDocument() {
   if (!token || !secret) notFound();
 
   const snapshot = decodeSnapshot(token, secret);
+  const Renderer=snapshot.schema_version===2?CertificadoPDF:LegacyCertificadoPDF;
   return (
     <main className="pdf-print-root pdf-render-page">
-      <CertificadoPDF data={certificadoFromPdfSnapshot(snapshot)} />
+      <Renderer data={certificadoFromPdfSnapshot(snapshot)} />
     </main>
   );
 }
