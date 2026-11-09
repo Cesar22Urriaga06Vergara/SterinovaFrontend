@@ -21,6 +21,34 @@ function load(file){
 }
 const person={nombre:'Ana',apellido:'Prueba',cargo:'Profesional de Calidad'};
 const keys={ETO:['temperatura','humedad','presion','tiempo_exposicion','tiempo_aireacion'],VAPOR:['temperatura','tiempo_exposicion','tiempo_secado','humedad_presion','tiempo_aireacion']};
+const materialColumns=['descripcion','referencia','lote','cantidad','empaque','muestras_retencion','muestras_cliente','muestras_laboratorio'];
+function certificateWithMaterials(materiales){
+  const {CertificadoPDF}=load(path.join(root,'components/pdf/CertificadoPDF.tsx'));
+  return renderToStaticMarkup(React.createElement(CertificadoPDF,{data:{consecutivo:'MULTI-001',snapshot_datos:{materiales}}}));
+}
+function materialRows(html){
+  const table=html.match(/<table\b[^>]*><thead>[\s\S]*?DESCRIPCIÓN[\s\S]*?<\/table>/)?.[0];
+  assert.ok(table,'material table exists');
+  return [...table.matchAll(/<tbody>([\s\S]*?)<\/tbody>/g)][0][1].match(/<tr\b[^>]*>[\s\S]*?<\/tr>/g)??[];
+}
+for(const count of [1,5,25]){
+  test(`certificate renders exactly ${count} material rows with independent frozen values`,()=>{
+    const materiales=Array.from({length:count},(_,i)=>({id:i+1,descripcion:`Producto ${i+1}`,referencia:`REF-${i+1}`,lote:`LOTE-${i+1}`,cantidad:i+10,empaque:`EMPAQUE-${i+1}`,muestras_retencion:i,muestras_cliente:i+2,muestras_laboratorio:null}));
+    const rows=materialRows(certificateWithMaterials(materiales));
+    assert.equal(rows.length,count);
+    materiales.forEach((material,i)=>{
+      const cells=[...rows[i].matchAll(/<td\b[^>]*>(.*?)<\/td>/g)].map(match=>match[1]);
+      assert.deepEqual(cells,materialColumns.map(key=>material[key]===null?'N/A':String(material[key])));
+    });
+  });
+}
+for(const materiales of [[],null,undefined]){
+  test(`certificate renders one N/A row for ${JSON.stringify(materiales)} materials`,()=>{
+    const rows=materialRows(certificateWithMaterials(materiales));
+    assert.equal(rows.length,1);
+    assert.equal((rows[0].match(/>N\/A<\/td>/g)??[]).length,8);
+  });
+}
 test('certificate prints frozen materials, dates and people without ICONTEC/QR/version or content in stamp box',()=>{
   const {CertificadoPDF}=load(path.join(root,'components/pdf/CertificadoPDF.tsx'));
   const snapshot={schema_version:2,documento:{fecha_emision:'2026-11-09',fecha_esterilizacion:'2024-02-29',fecha_vencimiento:'2027-02-28'},

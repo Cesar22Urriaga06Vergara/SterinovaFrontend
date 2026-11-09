@@ -17,7 +17,7 @@ type Snapshot = {
     fecha_vencimiento?: string;
   };
   cliente?: { razon_social?: string; nit?: string };
-  materiales?: MaterialRecibido[];
+  materiales?: MaterialRecibido[] | null;
   ciclo_esterilizacion?: {
     metodo?: "ETO" | "VAPOR";
     equipo?: string;
@@ -72,7 +72,7 @@ export const CertificadoPDF = forwardRef<
   const document = snapshot.documento ?? {};
   const ciclo = snapshot.ciclo_esterilizacion ?? {};
   const cliente = snapshot.cliente;
-  const materiales = snapshot.materiales ?? [];
+  const materiales = snapshot.materiales?.length ? snapshot.materiales : [null];
   const issued = document.fecha_emision ?? data.fecha_emision;
   const method = ciclo.metodo ?? snapshot.informacion_tecnica?.metodo;
   const tables = snapshot.informacion_tecnica?.tablas;
@@ -176,32 +176,27 @@ export const CertificadoPDF = forwardRef<
             </tr>
           </thead>
           <tbody>
-            {Array.from({ length: Math.max(20, materiales.length) }, (_, i) => {
-              const material = materiales[i];
-              return (
-                <tr key={material?.id ?? i} className="h-[4mm]">
-                  {[
-                    "descripcion",
-                    "referencia",
-                    "lote",
-                    "cantidad",
-                    "empaque",
-                    "muestras_retencion",
-                    "muestras_cliente",
-                    "muestras_laboratorio",
-                  ].map((key) => (
-                    <td
-                      key={key}
-                      className={`${cell} ${key === "descripcion" ? "text-left" : ""}`}
-                    >
-                      {material
-                        ? display(material[key as keyof MaterialRecibido])
-                        : ""}
-                    </td>
-                  ))}
-                </tr>
-              );
-            })}
+            {materiales.map((material, i) => (
+              <tr key={material?.id ?? i} className="h-[4mm]">
+                {[
+                  "descripcion",
+                  "referencia",
+                  "lote",
+                  "cantidad",
+                  "empaque",
+                  "muestras_retencion",
+                  "muestras_cliente",
+                  "muestras_laboratorio",
+                ].map((key) => (
+                  <td
+                    key={key}
+                    className={`${cell} ${key === "descripcion" ? "text-left" : ""}`}
+                  >
+                    {display(material?.[key as keyof MaterialRecibido])}
+                  </td>
+                ))}
+              </tr>
+            ))}
           </tbody>
         </table>
         <section className="mt-[1.5mm] break-inside-avoid">

@@ -1,4 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
+import nextEnv from "@next/env";
+
+nextEnv.loadEnvConfig(process.cwd());
+process.env.PDF_RENDER_SECRET ??= "isolated-playwright-pdf-render-secret-only";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -24,6 +28,7 @@ export default defineConfig({
     timeout: 120_000,
     env: {
       NEXT_PUBLIC_API_URL: "http://localhost:3001",
+      PDF_RENDER_SECRET: process.env.PDF_RENDER_SECRET,
     },
   },
 });
