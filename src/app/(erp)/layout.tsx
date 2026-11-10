@@ -46,9 +46,9 @@ function AuthorizedErpLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const user = useStoredUser();
-  const { can } = useSession();
+  const { can, permissions } = useSession();
   const quoteRoute = pathname === "/comercial/cotizaciones" || pathname.startsWith("/comercial/cotizaciones/");
-  const routeAllowed = quoteRoute ? can(pathname.endsWith("/nueva") ? "cotizaciones.crear" : "cotizaciones.ver") : canAccessPath(pathname, user.rol);
+  const routeAllowed = quoteRoute ? can(pathname.endsWith("/nueva") ? "cotizaciones.crear" : "cotizaciones.ver") : canAccessPath(pathname, user.rol, permissions);
   const hydrated = useSyncExternalStore(
     subscribeToStorage,
     getClientHydrationSnapshot,

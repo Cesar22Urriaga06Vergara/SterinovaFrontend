@@ -15,6 +15,7 @@ import { cotizacionFromPdfSnapshot, formatMetadataFromSnapshot } from "@/lib/pdf
 import type { PdfFormatMetadata } from "@/lib/pdf-render-data";
 import { useSession, useQuoteHeaders } from "@/lib/session";
 import { useStoredUser } from "@/lib/stored-user-hook";
+import { SolicitudAnulacionButton } from "@/components/SolicitudAnulacionButton";
 
 type CotizacionPreview = { source: Cotizacion; data: Cotizacion; metadata: PdfFormatMetadata };
 
@@ -252,6 +253,7 @@ export default function CotizacionesPage() {
                               {downloadingId === cotizacion.id ? "Descargando..." : "Descargar PDF Oficial"}
                             </button>
                           ) : null}
+                          <SolicitudAnulacionButton cotizacion={cotizacion} onSuccess={setSuccess} />
                           {can("cotizaciones.editar") && isEditableDraft(cotizacion) ? (
                             <button
                               type="button"
@@ -282,6 +284,7 @@ export default function CotizacionesPage() {
               <p className="text-xs text-slate-500">Vista previa. El PDF oficial se fija al emitir.</p>
             </div>
             {can("cotizaciones.editar") && isEditableDraft(previewCotizacion.source) && <Link href={`/comercial/cotizaciones/${previewCotizacion.source.id}/editar`} className="rounded border px-3 py-2">Editar</Link>}
+            <SolicitudAnulacionButton cotizacion={previewCotizacion.source} onSuccess={(message) => { setSuccess(message); setPreviewCotizacion(null); }} />
             <button type="button" onClick={() => setPreviewCotizacion(null)} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100" aria-label="Cerrar vista previa">
               <X className="h-5 w-5" aria-hidden />
             </button>

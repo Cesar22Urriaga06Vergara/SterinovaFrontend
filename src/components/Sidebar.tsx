@@ -17,11 +17,12 @@ import {
 } from "lucide-react";
 import {
   getActiveNavigationHref,
-  navigationSections,
+  getVisibleNavigationSections,
   type AppRole,
   type NavigationIcon,
 } from "@/lib/navigation";
 import { useStoredUser } from "@/lib/stored-user-hook";
+import { useSession } from "@/lib/session";
 
 const icons: Record<NavigationIcon, LucideIcon> = {
   home: Home,
@@ -43,6 +44,7 @@ type SidebarProps = {
 export function Sidebar({ mobileOpen, onNavigate }: SidebarProps) {
   const pathname = usePathname();
   const user = useStoredUser();
+  const { permissions } = useSession();
   const [isMobileViewport, setIsMobileViewport] = useState(false);
 
   useEffect(() => {
@@ -54,12 +56,7 @@ export function Sidebar({ mobileOpen, onNavigate }: SidebarProps) {
   }, []);
 
   const role = user?.rol as AppRole | undefined;
-  const sections = navigationSections
-    .map((section) => ({
-      ...section,
-      links: section.links.filter((link) => link.roles.some((allowedRole) => allowedRole === role)),
-    }))
-    .filter((section) => section.links.length > 0);
+  const sections = getVisibleNavigationSections(role, permissions);
   const hrefs = sections.flatMap((section) => section.links.map((link) => link.href));
   const activeHref = getActiveNavigationHref(pathname, hrefs);
 
