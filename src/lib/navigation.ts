@@ -9,25 +9,25 @@ export const navigationSections = [
   },
   {
     title: "Maestros",
-    links: [{ href: "/comercial/clientes", label: "Clientes", icon: "users", roles: ["Admin", "Comercial"] }],
+    links: [{ href: "/comercial/clientes", label: "Clientes", icon: "users", permission: "clientes.ver" }],
   },
   {
     title: "Operación",
     links: [
-      { href: "/comercial", label: "Panel Comercial", icon: "briefcase", roles: ["Admin", "Comercial"] },
-      { href: "/comercial/cotizaciones", label: "Cotizaciones", icon: "fileText", roles: ["Admin", "Comercial"] },
-      { href: "/logistica", label: "Logística", icon: "truck", roles: ["Admin", "Logistica"] },
-      { href: "/planta", label: "Planta", icon: "factory", roles: ["Admin", "Planta"] },
-      { href: "/calidad", label: "Calidad", icon: "checkCircle", roles: ["Admin", "Calidad"] },
-      { href: "/solicitudes", label: "Solicitudes Pendientes", icon: "fileText", roles: allRoles, permission: "solicitudes_anulacion.ver" },
+      { href: "/comercial", label: "Panel Comercial", icon: "briefcase", permission: "cotizaciones.ver" },
+      { href: "/comercial/cotizaciones", label: "Cotizaciones", icon: "fileText", permission: "cotizaciones.ver" },
+      { href: "/logistica", label: "Logística", icon: "truck", permission: "logistica.ordenes.ver" },
+      { href: "/planta", label: "Planta", icon: "factory", permission: "planta.ordenes.ver" },
+      { href: "/calidad", label: "Calidad", icon: "checkCircle", permission: "calidad.ciclos.ver" },
+      { href: "/solicitudes", label: "Solicitudes Pendientes", icon: "fileText", permission: "solicitudes_anulacion.ver" },
     ],
   },
   {
     title: "Administración",
     links: [
-      { href: "/usuarios", label: "Usuarios", icon: "users", roles: ["Admin"] },
-      { href: "/configuracion/plantillas", label: "Plantillas", icon: "settings", roles: ["Admin"] },
-      { href: "/configuracion/sellos", label: "Sellos", icon: "badgeCheck", roles: ["Admin"] },
+      { href: "/usuarios", label: "Usuarios", icon: "users", permission: "usuarios.ver" },
+      { href: "/configuracion/plantillas", label: "Plantillas", icon: "settings", permission: "formatos.ver" },
+      { href: "/configuracion/sellos", label: "Sellos", icon: "badgeCheck", permission: "sellos.ver" },
     ],
   },
 ] as const;
@@ -42,27 +42,36 @@ const roleHome: Record<AppRole, string> = {
   Calidad: "/calidad",
 };
 
-const rolePrefixes: Record<Exclude<AppRole, "Admin">, readonly string[]> = {
-  Comercial: ["/comercial"],
-  Logistica: ["/logistica"],
-  Planta: ["/planta"],
-  Calidad: ["/calidad"],
-};
-
 export function isAppRole(value: string | undefined): value is AppRole {
   return Boolean(value && allRoles.includes(value as AppRole));
 }
 
-export function getRoleHomePath(role: string | undefined): string {
-  return isAppRole(role) ? roleHome[role] : "/login";
+export function getRoleHomePath(role: string | undefined, permissions: readonly string[] = []): string {
+  if (!isAppRole(role)) return "/login";
+  const preferred = roleHome[role];
+  if (canAccessPath(preferred, role, permissions)) return preferred;
+  const candidates = ["/comercial", "/logistica", "/planta", "/calidad", "/"];
+  return candidates.find((path) => canAccessPath(path, role, permissions)) ?? "/login";
 }
 
 export function canAccessPath(pathname: string, role: string | undefined, permissions: readonly string[] = []): boolean {
-  if (!isAppRole(role)) return false;
-  if (pathname === "/solicitudes" || pathname.startsWith("/solicitudes/")) return permissions.includes("solicitudes_anulacion.ver");
-  if (role === "Admin") return true;
   if (pathname === "/") return true;
-  return rolePrefixes[role].some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  const pathPermissions: readonly [string, string][] = [
+    ["/comercial/clientes", "clientes.ver"],
+    ["/comercial/cotizaciones", "cotizaciones.ver"],
+    ["/comercial", "cotizaciones.ver"],
+    ["/logistica", "logistica.ordenes.ver"],
+    ["/planta", "planta.ordenes.ver"],
+    ["/calidad", "calidad.ciclos.ver"],
+    ["/solicitudes", "solicitudes_anulacion.ver"],
+    ["/usuarios", "usuarios.ver"],
+    ["/configuracion/plantillas", "formatos.ver"],
+    ["/configuracion/sellos", "sellos.ver"],
+  ];
+  const match = [...pathPermissions]
+    .sort(([first], [second]) => second.length - first.length)
+    .find(([prefix]) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  return match ? permissions.includes(match[1]) : isAppRole(role) && pathname === "/";
 }
 
 export function getVisibleNavigationSections(role: string | undefined, permissions: readonly string[]) {

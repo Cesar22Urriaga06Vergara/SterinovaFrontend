@@ -54,3 +54,17 @@ test("usa un mensaje seguro cuando la respuesta no contiene texto", () => {
     "No fue posible completar la solicitud. Inténtalo de nuevo.",
   );
 });
+
+test("distingue una respuesta 401 sin mensaje del backend", () => {
+  assert.equal(
+    getApiErrorMessage({ response: { status: 401, data: {} } }),
+    "La sesión o las credenciales no son válidas.",
+  );
+});
+
+test("distingue una respuesta 403 sin mensaje del backend", () => {
+  assert.equal(
+    getApiErrorMessage({ response: { status: 403, data: {} } }),
+    "No tienes permiso para realizar esta acción.",
+  );
+});

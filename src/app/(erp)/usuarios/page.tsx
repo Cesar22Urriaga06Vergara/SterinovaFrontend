@@ -4,12 +4,12 @@ import { type FormEvent, useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import { Plus } from "lucide-react";
 import { api } from "@/lib/api";
-import { useStoredUser } from "@/lib/stored-user-hook";
-import { ChangePasswordDialog, UserFormDialog } from "./UserDialogs";
+import { useSession } from "@/lib/session";
+import { ResetAccessDialog, UserFormDialog } from "./UserDialogs";
 import { UsersTable } from "./UsersTable";
+import { UserRolesDialog, type RoleAssignment, type Role, type Scope } from "./UserRolesDialog";
 import { blankUserForm, type UserForm, type UserRecord, userFullName } from "./types";
 import {
-  getPasswordValidationError,
   type UserFormErrors,
   validateUserForm,
 } from "@/lib/user-validation";
@@ -24,8 +24,15 @@ function errorMessage(error: unknown, fallback: string): string {
 }
 
 export default function UsersPage() {
-  const sessionUser = useStoredUser();
+  const { user: sessionUser, can } = useSession();
+  const canViewUsers = can("usuarios.ver");
+  const canManageIdentity = can("usuarios.identidad.gestionar");
+  const canManageAssignments = can("asignaciones.gestionar");
+  const canCreateUsers = canManageIdentity && canManageAssignments;
   const [users, setUsers] = useState<UserRecord[]>([]);
+  const [assignments, setAssignments] = useState<RoleAssignment[]>([]);
+  const [rolesUser, setRolesUser] = useState<UserRecord | null>(null);
+  const [catalog, setCatalog] = useState<{ roles: Role[]; scopes: Scope[] }>({ roles: [], scopes: [] });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [pageError, setPageError] = useState("");
@@ -36,18 +43,28 @@ export default function UsersPage() {
   const [fieldErrors, setFieldErrors] = useState<UserFormErrors>({});
   const [passwordUser, setPasswordUser] = useState<UserRecord | null>(null);
   const [newPassword, setNewPassword] = useState("");
-  const [passwordError, setPasswordError] = useState("");
 
   const fetchUsers = useCallback(async () => {
-    const { data } = await api.get<UserRecord[]>("/users");
-    return data;
-  }, []);
+    if (!canViewUsers) throw new Error("No tienes permiso para consultar usuarios.");
+    const [accounts, profiles, roleCatalog] = await Promise.all([
+      api.get<UserRecord[]>("/users"),
+      canManageAssignments
+        ? api.get<RoleAssignment[]>("/users/role-assignments")
+        : Promise.resolve({ data: [] as RoleAssignment[] }),
+      canManageAssignments
+        ? api.get<{ roles: Role[]; scopes: Scope[] }>("/users/role-catalog")
+        : Promise.resolve({ data: { roles: [], scopes: [] } }),
+    ]);
+    return { users: accounts.data, assignments: profiles.data, catalog: roleCatalog.data };
+  }, [canManageAssignments, canViewUsers]);
 
   const loadUsers = useCallback(async () => {
     setPageError("");
     try {
       const data = await fetchUsers();
-      setUsers(data);
+      setUsers(data.users);
+      setAssignments(data.assignments);
+      setCatalog(data.catalog);
     } catch (error) {
       setPageError(errorMessage(error, "No se pudieron cargar los usuarios."));
     } finally {
@@ -56,10 +73,11 @@ export default function UsersPage() {
   }, [fetchUsers]);
 
   useEffect(() => {
+    if (!canViewUsers) return;
     let active = true;
     fetchUsers()
       .then((data) => {
-        if (active) setUsers(data);
+        if (active) { setUsers(data.users); setAssignments(data.assignments); setCatalog(data.catalog); }
       })
       .catch((error: unknown) => {
         if (active) {
@@ -73,9 +91,10 @@ export default function UsersPage() {
     return () => {
       active = false;
     };
-  }, [fetchUsers]);
+  }, [canViewUsers, fetchUsers]);
 
   function openCreate() {
+    if (!canCreateUsers) return;
     setEditing(null);
     setForm(blankUserForm());
     setFieldErrors({});
@@ -84,6 +103,7 @@ export default function UsersPage() {
   }
 
   function openEdit(user: UserRecord) {
+    if (!canManageIdentity) return;
     setEditing(user);
     setForm({
       nombre: user.nombre,
@@ -94,6 +114,8 @@ export default function UsersPage() {
       email: user.email,
       rol: user.rol,
       password: "",
+      role_id: "",
+      scope_id: "",
     });
     setFieldErrors({});
     setPageError("");
@@ -113,6 +135,7 @@ export default function UsersPage() {
     const errors = validateUserForm(form, Boolean(editing));
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
+    if (!editing && (!form.role_id || !form.scope_id)) { setPageError("Selecciona un perfil RBAC y su ámbito."); return; }
 
     setSaving(true);
     const userData = {
@@ -122,14 +145,14 @@ export default function UsersPage() {
       celular: form.celular.trim() || null,
       email_contacto: form.email_contacto.trim() || null,
       email: form.email.trim(),
-      rol: form.rol,
+      ...(!editing ? { rol: form.rol } : {}),
     };
     try {
       if (editing) {
         await api.patch(`/users/${editing.id}`, userData);
         setNotice(`Se guardaron los cambios de ${userFullName(editing)}.`);
       } else {
-        await api.post("/users", { ...userData, password: form.password });
+        await api.post("/users", { ...userData, password: form.password, role_id: Number(form.role_id), scope_id: Number(form.scope_id) });
         setNotice(`Se creó el usuario ${form.nombre.trim()}.`);
       }
       setFormOpen(false);
@@ -153,32 +176,27 @@ export default function UsersPage() {
     }
   }
 
-  async function savePassword(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function savePassword() {
     if (!passwordUser) return;
-    const validationError = getPasswordValidationError(newPassword);
-    if (validationError) {
-      setPasswordError(validationError);
-      return;
-    }
-
     setSaving(true);
     setPageError("");
-    setPasswordError("");
     try {
-      await api.patch(`/users/${passwordUser.id}/password`, { password: newPassword });
-      setNotice(`Se actualizó la contraseña de ${userFullName(passwordUser)}.`);
-      setPasswordUser(null);
-      setNewPassword("");
+      const { data } = await api.patch<{ reset_token: string }>(
+        `/users/${passwordUser.id}/password/reset`,
+      );
+      const url = new URL("/reset-password", window.location.origin);
+      url.hash = `token=${encodeURIComponent(data.reset_token)}`;
+      setNewPassword(url.href);
+      setNotice(`Se generó un enlace de un solo uso para ${userFullName(passwordUser)}.`);
     } catch (error) {
-      setPageError(errorMessage(error, "No se pudo cambiar la contraseña."));
+      setPageError(errorMessage(error, "No se pudo iniciar el restablecimiento."));
     } finally {
       setSaving(false);
     }
   }
 
-  if (sessionUser?.rol !== "Admin") {
-    return <section className="mx-auto max-w-3xl rounded-xl border border-red-200 bg-white p-6 text-sm text-red-700 shadow-sm">Solo un administrador puede gestionar usuarios.</section>;
+  if (!canViewUsers) {
+    return <section role="alert" className="mx-auto max-w-3xl rounded-xl border border-red-200 bg-white p-6 text-sm text-red-700 shadow-sm">No tienes permiso para consultar usuarios.</section>;
   }
 
   return (
@@ -189,9 +207,9 @@ export default function UsersPage() {
           <h1 className="mt-1 text-3xl font-bold text-sterinova-dark">Usuarios</h1>
           <p className="mt-2 text-sm text-slate-600">Cuentas, datos de contacto y permisos de acceso al ERP.</p>
         </div>
-        <button type="button" onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-sterinova-dark px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sterinova-teal">
+        {canCreateUsers ? <button type="button" onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-sterinova-dark px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sterinova-teal">
           <Plus className="h-4 w-4" aria-hidden /> Nuevo Usuario
-        </button>
+        </button> : null}
       </header>
 
       {pageError ? <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{pageError}</p> : null}
@@ -202,18 +220,25 @@ export default function UsersPage() {
         loading={loading}
         sessionUserId={sessionUser.id}
         onEdit={openEdit}
+        assignments={assignments}
+        onRoles={setRolesUser}
+        canManageIdentity={canManageIdentity}
+        canManageAssignments={canManageAssignments}
         onChangePassword={(user) => {
+          if (!canManageIdentity) return;
           setPasswordUser(user);
           setNewPassword("");
-          setPasswordError("");
           setPageError("");
         }}
         onToggleStatus={(user) => void toggleStatus(user)}
       />
 
+      {rolesUser && canManageAssignments && <UserRolesDialog user={rolesUser} assignments={assignments.filter(item => item.user_id === rolesUser.id)} sessionUserId={sessionUser.id ?? 0} onClose={() => setRolesUser(null)} onChanged={loadUsers} />}
+
       {formOpen ? (
         <UserFormDialog
           editing={editing}
+          catalog={catalog}
           form={form}
           errors={fieldErrors}
           pageError={pageError}
@@ -225,15 +250,14 @@ export default function UsersPage() {
       ) : null}
 
       {passwordUser ? (
-        <ChangePasswordDialog
+        <ResetAccessDialog
           user={passwordUser}
-          passwordError={passwordError}
+          passwordError=""
           password={newPassword}
           pageError={pageError}
           saving={saving}
-          onPasswordChange={(value) => { setNewPassword(value); setPasswordError(""); }}
-          onSubmit={(event) => void savePassword(event)}
-          onClose={() => { setPasswordUser(null); setPasswordError(""); }}
+          onSubmit={(event) => { event.preventDefault(); void savePassword(); }}
+          onClose={() => { setPasswordUser(null); setNewPassword(""); }}
         />
       ) : null}
     </div>

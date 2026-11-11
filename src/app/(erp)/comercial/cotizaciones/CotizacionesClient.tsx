@@ -187,7 +187,7 @@ export default function CotizacionesPage() {
 
         <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-sterinova-dark/10">
           <div className="overflow-x-auto">
-            <table className="min-w-[900px] w-full divide-y divide-sterinova-dark/10 text-left text-sm">
+            <table className="min-w-225 w-full divide-y divide-sterinova-dark/10 text-left text-sm">
               <thead className="bg-sterinova-light text-sterinova-dark">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Consecutivo</th>

@@ -5,7 +5,7 @@ import { Plus, X } from "lucide-react";
 import { MaterialesEditor } from "@/components/logistica/MaterialesEditor";
 import { nuevoMaterial, validarMateriales } from "@/lib/operational-forms";
 import type { MaterialRecibido } from "@/lib/operational-types";
-import { api } from "@/lib/api";
+import { api, downloadPdfFromBackend } from "@/lib/api";
 import {
   Cotizacion,
   formatCurrency,
@@ -36,6 +36,10 @@ export default function LogisticaPage() {
   const [conductor, setConductor] = useState("");
   const [placa, setPlaca] = useState("");
   const [observaciones, setObservaciones] = useState("");
+  const [pdfPreview, setPdfPreview] = useState<{
+    url: string;
+    title: string;
+  } | null>(null);
 
   const loadData = useCallback(async () => {
     const [ordenesRes, aprobadasRes] = await Promise.all([
@@ -65,6 +69,11 @@ export default function LogisticaPage() {
       active = false;
     };
   }, [loadData]);
+
+  useEffect(() => {
+    if (!pdfPreview) return;
+    return () => URL.revokeObjectURL(pdfPreview.url);
+  }, [pdfPreview]);
 
   async function refreshData() {
     try {
@@ -138,6 +147,34 @@ export default function LogisticaPage() {
       await refreshData();
     } catch {
       setError(`No se pudo actualizar el estado de ${orden.consecutivo}.`);
+    }
+  }
+
+  async function previewPdf(orden: OrdenServicio, tipo: "orden" | "acta") {
+    setError("");
+    try {
+      const { data } = await api.get<Blob>(
+        `/logistica/ordenes/${orden.id}/pdf?tipo=${tipo}`,
+        { responseType: "blob" },
+      );
+      setPdfPreview({
+        url: URL.createObjectURL(data),
+        title: `${orden.consecutivo} - ${tipo === "acta" ? "Acta" : "Orden"}`,
+      });
+    } catch {
+      setError(`No se pudo previsualizar el documento ${orden.consecutivo}.`);
+    }
+  }
+
+  async function downloadPdf(orden: OrdenServicio, tipo: "orden" | "acta") {
+    setError("");
+    try {
+      await downloadPdfFromBackend(
+        `/logistica/ordenes/${orden.id}/pdf?tipo=${tipo}`,
+        `${orden.consecutivo}-${tipo === "acta" ? "acta" : "orden"}.pdf`,
+      );
+    } catch {
+      setError(`No se pudo generar el documento ${orden.consecutivo}.`);
     }
   }
 
@@ -257,16 +294,46 @@ export default function LogisticaPage() {
                           Editar material recibido
                         </button>
                       ) : null}
+                      <div className="flex flex-col gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void previewPdf(orden, "orden")}
+                          className="rounded-lg border border-sterinova-teal/40 px-2.5 py-1.5 text-xs font-medium text-sterinova-teal hover:bg-sterinova-teal/10"
+                        >
+                          Ver Orden
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void downloadPdf(orden, "orden")}
+                          className="rounded-lg border border-sterinova-teal/40 px-2.5 py-1.5 text-xs font-medium text-sterinova-teal hover:bg-sterinova-teal/10"
+                        >
+                          Descargar Orden
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void previewPdf(orden, "acta")}
+                          className="rounded-lg border border-sterinova-dark/20 px-2.5 py-1.5 text-xs font-medium text-sterinova-dark hover:bg-sterinova-light"
+                        >
+                          Ver Acta
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void downloadPdf(orden, "acta")}
+                          className="rounded-lg border border-sterinova-dark/20 px-2.5 py-1.5 text-xs font-medium text-sterinova-dark hover:bg-sterinova-light"
+                        >
+                          Descargar Acta
+                        </button>
+                      </div>
                       {action ? (
                         <button
                           type="button"
                           onClick={() => void handleEstado(orden)}
-                          className="rounded-lg border border-sterinova-teal/40 px-2.5 py-1.5 text-xs font-medium text-sterinova-teal hover:bg-sterinova-teal/10"
+                          className="mt-2 rounded-lg border border-sterinova-teal/40 px-2.5 py-1.5 text-xs font-medium text-sterinova-teal hover:bg-sterinova-teal/10"
                         >
                           {action.label}
                         </button>
                       ) : (
-                        <span className="text-xs text-sterinova-teal">—</span>
+                        <span className="mt-2 block text-xs text-sterinova-teal">—</span>
                       )}
                     </td>
                   </tr>
@@ -276,6 +343,29 @@ export default function LogisticaPage() {
           </tbody>
         </table>
       </div>
+
+      {pdfPreview ? (
+        <div className="fixed inset-0 z-[60] flex flex-col bg-black/70 p-3 sm:p-6">
+          <div className="mx-auto flex w-full max-w-6xl items-center justify-between rounded-t-xl bg-white px-4 py-3">
+            <h2 className="font-semibold text-sterinova-dark">
+              {pdfPreview.title}
+            </h2>
+            <button
+              type="button"
+              onClick={() => setPdfPreview(null)}
+              className="rounded-lg p-1 text-sterinova-dark hover:bg-sterinova-light"
+              aria-label="Cerrar vista previa"
+            >
+              <X className="h-5 w-5" aria-hidden />
+            </button>
+          </div>
+          <iframe
+            src={pdfPreview.url}
+            title={`Vista previa: ${pdfPreview.title}`}
+            className="mx-auto h-full w-full max-w-6xl rounded-b-xl bg-white"
+          />
+        </div>
+      ) : null}
 
       {modalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-sterinova-dark/50 p-4">

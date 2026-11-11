@@ -18,6 +18,8 @@ export type UserForm = Omit<UserRecord, "id" | "activo" | "apellido" | "cargo" |
   celular: string;
   email_contacto: string;
   password: string;
+  role_id: string;
+  scope_id: string;
 };
 
 export const USER_ROLES: UserRole[] = ["Admin", "Comercial", "Logistica", "Planta", "Calidad"];
@@ -31,6 +33,8 @@ export const blankUserForm = (): UserForm => ({
   email: "",
   rol: "Comercial",
   password: "",
+  role_id: "",
+  scope_id: "",
 });
 
 export function userFullName(user: Pick<UserRecord, "nombre" | "apellido">) {

@@ -141,3 +141,26 @@ test("Usuarios valida antes de crear y muestra errores junto a cada campo", () =
   assert.match(userDialog, /errors\.password/);
   assert.match(userDialog, /errors\.email/);
 });
+
+test("administración de usuarios usa permisos RBAC y emite un enlace de restablecimiento", () => {
+  const usersPage = readFileSync(
+    path.join(root, "src/app/(erp)/usuarios/page.tsx"),
+    "utf8",
+  );
+  const resetPage = readFileSync(
+    path.join(root, "src/app/reset-password/page.tsx"),
+    "utf8",
+  );
+  const userTable = readFileSync(
+    path.join(root, "src/app/(erp)/usuarios/UsersTable.tsx"),
+    "utf8",
+  );
+
+  assert.match(usersPage, /can\("usuarios\.identidad\.gestionar"\)/);
+  assert.match(usersPage, /can\("asignaciones\.gestionar"\)/);
+  assert.match(usersPage, /\/users\/\$\{passwordUser\.id\}\/password\/reset/);
+  assert.doesNotMatch(usersPage, /\/users\/\$\{passwordUser\.id\}\/password`/);
+  assert.match(resetPage, /\/auth\/password\/reset/);
+  assert.match(userTable, /canManageIdentity/);
+  assert.match(userTable, /canManageAssignments/);
+});

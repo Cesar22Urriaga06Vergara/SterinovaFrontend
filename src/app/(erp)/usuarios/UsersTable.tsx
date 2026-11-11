@@ -1,6 +1,7 @@
 import { KeyRound, Pencil, ShieldCheck, UserRoundX, Users } from "lucide-react";
 import type { UserRecord } from "./types";
 import { userFullName } from "./types";
+import type { RoleAssignment } from "./UserRolesDialog";
 
 export function UsersTable({
   users,
@@ -9,6 +10,10 @@ export function UsersTable({
   onEdit,
   onChangePassword,
   onToggleStatus,
+  assignments,
+  onRoles,
+  canManageIdentity,
+  canManageAssignments,
 }: {
   users: UserRecord[];
   loading: boolean;
@@ -16,6 +21,10 @@ export function UsersTable({
   onEdit: (user: UserRecord) => void;
   onChangePassword: (user: UserRecord) => void;
   onToggleStatus: (user: UserRecord) => void;
+  assignments: RoleAssignment[];
+  onRoles: (user: UserRecord) => void;
+  canManageIdentity: boolean;
+  canManageAssignments: boolean;
 }) {
   return (
     <section className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
@@ -51,7 +60,7 @@ export function UsersTable({
                     {user.cargo ? <p className="mt-0.5 text-xs text-slate-500">{user.cargo}</p> : null}
                   </td>
                   <td className="px-5 py-4 text-slate-600">{user.email}</td>
-                  <td className="px-5 py-4"><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">{user.rol}</span></td>
+                  <td className="px-5 py-4"><div className="space-y-1">{assignments.filter(item => item.user_id === user.id).map(item => <p key={`${item.kind}-${item.id}`} className={`text-xs ${!item.active || !item.role_active ? "text-amber-700" : "text-slate-700"}`}>{item.name} · {item.scope_name}{!item.active ? " · asignación inactiva" : !item.role_active ? " · perfil inactivo" : ""}</p>)}{assignments.every(item => item.user_id !== user.id) ? <p className="text-xs text-amber-700">Sin asignación RBAC</p> : null}<p className="text-xs text-slate-500">Compatibilidad: {user.rol}</p></div></td>
                   <td className="px-5 py-4">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${user.activo ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"}`}>
                       {user.activo ? "Activo" : "Inactivo"}
@@ -59,22 +68,25 @@ export function UsersTable({
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex justify-end gap-2">
-                      <button type="button" onClick={() => onEdit(user)} className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-sterinova-dark hover:bg-slate-50">
-                        <Pencil className="h-3.5 w-3.5" aria-hidden /> Editar
-                      </button>
-                      <button type="button" onClick={() => onChangePassword(user)} className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-sterinova-dark hover:bg-slate-50">
-                        <KeyRound className="h-3.5 w-3.5" aria-hidden /> Contraseña
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onToggleStatus(user)}
-                        disabled={isSelf}
-                        title={isSelf ? "No puedes desactivar tu propia cuenta" : undefined}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        {user.activo ? <UserRoundX className="h-3.5 w-3.5" aria-hidden /> : <ShieldCheck className="h-3.5 w-3.5" aria-hidden />}
-                        {user.activo ? "Desactivar" : "Activar"}
-                      </button>
+                      {canManageAssignments ? <button type="button" onClick={() => onRoles(user)} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium">Roles</button> : null}
+                      {canManageIdentity ? <>
+                        <button type="button" onClick={() => onEdit(user)} className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-sterinova-dark hover:bg-slate-50">
+                          <Pencil className="h-3.5 w-3.5" aria-hidden /> Editar
+                        </button>
+                        <button type="button" onClick={() => onChangePassword(user)} className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-sterinova-dark hover:bg-slate-50">
+                          <KeyRound className="h-3.5 w-3.5" aria-hidden /> Restablecer acceso
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onToggleStatus(user)}
+                          disabled={isSelf}
+                          title={isSelf ? "No puedes desactivar tu propia cuenta" : undefined}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          {user.activo ? <UserRoundX className="h-3.5 w-3.5" aria-hidden /> : <ShieldCheck className="h-3.5 w-3.5" aria-hidden />}
+                          {user.activo ? "Desactivar" : "Activar"}
+                        </button>
+                      </> : null}
                     </div>
                   </td>
                 </tr>

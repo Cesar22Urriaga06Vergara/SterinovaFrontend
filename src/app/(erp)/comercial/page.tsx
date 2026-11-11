@@ -1,7 +1,7 @@
-"use client";
-
-import Link from "next/link";
 import { BarChart3, Building2, FileText } from "lucide-react";
+import Link from "next/link";
+
+export const instant = false;
 
 const links = [
   {

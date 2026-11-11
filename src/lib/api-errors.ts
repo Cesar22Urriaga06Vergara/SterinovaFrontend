@@ -26,16 +26,20 @@ export function getApiErrorMessage(error: unknown): string {
     return FALLBACK_API_ERROR;
   }
 
+  const status =
+    "status" in response && typeof response.status === "number"
+      ? response.status
+      : undefined;
   const data = response.data;
-  if (!data || typeof data !== "object") {
-    return FALLBACK_API_ERROR;
+  if (data && typeof data === "object") {
+    const message = "message" in data ? getErrorText(data.message) : null;
+    if (message) return message;
+
+    const backendError = "error" in data ? getErrorText(data.error) : null;
+    if (backendError) return backendError;
   }
 
-  const message = "message" in data ? getErrorText(data.message) : null;
-  if (message) {
-    return message;
-  }
-
-  const backendError = "error" in data ? getErrorText(data.error) : null;
-  return backendError ?? FALLBACK_API_ERROR;
+  if (status === 403) return "No tienes permiso para realizar esta acción.";
+  if (status === 401) return "La sesión o las credenciales no son válidas.";
+  return FALLBACK_API_ERROR;
 }

@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { runInNewContext } from "node:vm";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { runInNewContext } from "node:vm";
 import ts from "typescript";
 
 const sourcePath = path.join(
@@ -23,7 +23,7 @@ const { outputText } = ts.transpileModule(source, {
 const compiledModule = { exports: {} };
 runInNewContext(outputText, { exports: compiledModule.exports });
 
-test("organiza rutas existentes y restringe Usuarios al rol Admin", () => {
+test("muestra rutas de módulos usando permisos RBAC en vez del rol legacy", () => {
   const sections = compiledModule.exports.navigationSections;
   const labels = sections.map((section) => section.title);
   const links = sections.flatMap((section) => section.links);
@@ -34,8 +34,19 @@ test("organiza rutas existentes y restringe Usuarios al rol Admin", () => {
   assert.ok(links.some((link) => link.href === "/comercial/clientes"));
   assert.ok(links.some((link) => link.href === "/comercial/cotizaciones"));
   assert.ok(usersLink);
-  assert.equal(usersLink.roles.length, 1);
-  assert.equal(usersLink.roles[0], "Admin");
+  assert.equal(usersLink.permission, "usuarios.ver");
+
+  const { canAccessPath, getVisibleNavigationSections } = compiledModule.exports;
+  assert.equal(canAccessPath("/usuarios", "Admin", []), false);
+  assert.equal(canAccessPath("/logistica/ordenes", "Comercial", ["logistica.ordenes.ver"]), true);
+  assert.equal(canAccessPath("/planta", "Logistica", ["planta.ordenes.ver"]), true);
+  assert.equal(canAccessPath("/calidad", "Admin", ["clientes.ver"]), false);
+  assert.equal(
+    getVisibleNavigationSections("Admin", ["usuarios.ver"])
+      .flatMap((section) => section.links)
+      .some((link) => link.href === "/usuarios"),
+    true,
+  );
 });
 
 test("activa la ruta más específica dentro de módulos anidados", () => {

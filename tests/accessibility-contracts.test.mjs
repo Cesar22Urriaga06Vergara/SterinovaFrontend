@@ -21,7 +21,9 @@ test("la navegación móvil anuncia su landmark, oculta links cerrados y se cier
   const layout = read("src/app/(erp)/layout.tsx");
   const sidebar = read("src/components/Sidebar.tsx");
 
-  assert.ok(layout.indexOf('id="erp-menu-toggle"') < layout.indexOf("<Sidebar"));
+  assert.ok(
+    layout.indexOf('id="erp-menu-toggle"') < layout.indexOf("<Sidebar"),
+  );
   assert.match(layout, /sr-only[^"]*focus:not-sr-only/);
   assert.match(sidebar, /<nav[^>]*aria-label=/);
   assert.match(sidebar, /inert=\{/);
@@ -30,6 +32,18 @@ test("la navegación móvil anuncia su landmark, oculta links cerrados y se cier
   assert.match(layout, /event\.key !== "Escape"/);
   assert.match(layout, /focus\(\)/);
   assert.match(layout, /setMobileNavOpen\(\(open\) => !open\)/);
+  assert.match(
+    layout,
+    /function closeMobileNav\(\) \{\s*menuButtonRef\.current\?\.focus\(\);\s*setMobileNavOpen\(false\);\s*\}/,
+  );
+  assert.match(layout, /onNavigate=\{closeMobileNav\}/);
+});
+
+test("el dashboard comercial opta explícitamente de validación de navegación instantánea", () => {
+  const comercial = read("src/app/(erp)/comercial/page.tsx");
+
+  assert.doesNotMatch(comercial, /^\s*["']use client["'];/);
+  assert.match(comercial, /export const instant = false/);
 });
 
 test("la hidratación del layout ERP usa una snapshot externa en lugar de setState en un efecto", () => {

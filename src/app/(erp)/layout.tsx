@@ -1,13 +1,19 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { Menu } from "lucide-react";
-import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
+import { Sidebar } from "@/components/Sidebar";
 import { canAccessPath, getRoleHomePath } from "@/lib/navigation";
 import { SessionProvider, useSession } from "@/lib/session";
 import { useStoredUser } from "@/lib/stored-user-hook";
+import { Menu } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 function subscribeToStorage(callback: () => void) {
   window.addEventListener("storage", callback);
@@ -30,14 +36,12 @@ function getServerHydrationSnapshot() {
   return false;
 }
 
-export default function ErpLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function ErpLayout({ children }: { children: React.ReactNode }) {
   return (
     <Suspense fallback={<LayoutLoading />}>
-      <SessionProvider><AuthorizedErpLayout>{children}</AuthorizedErpLayout></SessionProvider>
+      <SessionProvider>
+        <AuthorizedErpLayout>{children}</AuthorizedErpLayout>
+      </SessionProvider>
     </Suspense>
   );
 }
@@ -47,8 +51,14 @@ function AuthorizedErpLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const user = useStoredUser();
   const { can, permissions } = useSession();
-  const quoteRoute = pathname === "/comercial/cotizaciones" || pathname.startsWith("/comercial/cotizaciones/");
-  const routeAllowed = quoteRoute ? can(pathname.endsWith("/nueva") ? "cotizaciones.crear" : "cotizaciones.ver") : canAccessPath(pathname, user.rol, permissions);
+  const quoteRoute =
+    pathname === "/comercial/cotizaciones" ||
+    pathname.startsWith("/comercial/cotizaciones/");
+  const routeAllowed = quoteRoute
+    ? can(
+        pathname.endsWith("/nueva") ? "cotizaciones.crear" : "cotizaciones.ver",
+      )
+    : canAccessPath(pathname, user.rol, permissions);
   const hydrated = useSyncExternalStore(
     subscribeToStorage,
     getClientHydrationSnapshot,
@@ -62,13 +72,17 @@ function AuthorizedErpLayout({ children }: { children: React.ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
 
+  function closeMobileNav() {
+    menuButtonRef.current?.focus();
+    setMobileNavOpen(false);
+  }
+
   useEffect(() => {
     if (!mobileNavOpen) return;
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape") return;
-      setMobileNavOpen(false);
-      menuButtonRef.current?.focus();
+      closeMobileNav();
     }
 
     document.addEventListener("keydown", handleKeyDown);
@@ -82,15 +96,13 @@ function AuthorizedErpLayout({ children }: { children: React.ReactNode }) {
       return;
     }
     if (!routeAllowed) {
-      router.replace(getRoleHomePath(user.rol));
+      router.replace(getRoleHomePath(user.rol, permissions));
     }
-  }, [hasAccessToken, hydrated, pathname, router, user, routeAllowed]);
+  }, [hasAccessToken, hydrated, pathname, router, user, permissions, routeAllowed]);
 
   const canRenderRoute = routeAllowed;
   if (!hydrated || !hasAccessToken || !user || !canRenderRoute) {
-    return (
-      <LayoutLoading />
-    );
+    return <LayoutLoading />;
   }
 
   return (
@@ -115,10 +127,7 @@ function AuthorizedErpLayout({ children }: { children: React.ReactNode }) {
           Menú
         </button>
       </div>
-      <Sidebar
-        mobileOpen={mobileNavOpen}
-        onNavigate={() => setMobileNavOpen(false)}
-      />
+      <Sidebar mobileOpen={mobileNavOpen} onNavigate={closeMobileNav} />
       <div className="flex min-w-0 flex-1 flex-col">
         <Header />
         <main

@@ -1,39 +1,25 @@
 # Documentación del frontend
 
-> **Estado:** vigente (índice).
-> **Verificado contra:** inventario documental de ambos repositorios el 6 de noviembre de 2026.
-> **Alcance:** clasificación y navegación de la documentación frontend.
-> **No cubre:** estado de despliegues, datos productivos ni implementación backend.
-> **Fuente canónica de:** índice documental frontend.
+La documentación complementaria del backend está en el [índice del Backend](../../Sterinova-Backend/docs/README.md).
 
-Revisada el 6 de noviembre de 2026 contra el código del frontend. La documentación complementaria del backend está en el [índice del backend](../../Sterinova-Backend/docs/README.md).
+## Contexto progresivo
 
-## Documentos vigentes
+Empieza por [contexto rápido](CONTEXTO_RAPIDO.md); usa el [mapa de estructura](ESTRUCTURA_FRONTEND.md) para localizar archivos. Abre solo la documentación y el código relacionados con la tarea. No cargues planes, reportes ni documentos del backend automáticamente.
 
-- [Arquitectura e integración](arquitectura/integracion-y-stack.md)
-- [Auditoría de dependencias y riesgos conocidos](arquitectura/auditoria-dependencias.md)
-- [Navegación y permisos visibles](arquitectura/navegacion-y-permisos.md)
-- [Desarrollo local](manuales/desarrollo-local.md)
-- [Guía de contribución frontend](../CONTRIBUTING.md)
-- [Plantilla de pull request](../.github/PULL_REQUEST_TEMPLATE.md)
-- [Changelog](../CHANGELOG.md)
-- [Módulos y rutas visibles](estado-proyecto/modulos.md)
-- [Contexto del producto](estado-proyecto/contexto-producto.md)
-- [Plan de acción frontend (6 de noviembre de 2026)](estado-proyecto/plan-accion-frontend-2026-11-06.md)
-- [Reporte de ejecución — Fase 2 (6 de noviembre de 2026)](estado-proyecto/reporte-fase2.md)
-- [Principios y patrones UI observados](ui-ux/principios-y-patrones.md)
-- [Accesibilidad: revisión Lighthouse y límites WCAG](ui-ux/accesibilidad.md)
-- [Reporte de ejecución — Fase 5 (6 de noviembre de 2026)](estado-proyecto/reporte-fase5.md)
-- [Reporte de ejecución — Fase 6 (6 de noviembre de 2026)](estado-proyecto/reporte-fase6.md)
-- [Reporte de ejecución — Fase 7 (6 de noviembre de 2026)](estado-proyecto/reporte-fase7.md)
-- [Reporte de auditoría de dependencias](arquitectura/auditoria-dependencias.md)
-- [Flujos críticos de interfaz](ui-ux/flujos-criticos.md)
-- [Pruebas frontend](calidad-y-pruebas/pruebas-frontend.md)
-- El mapa único de tipos de cotización, prefijos, formatos de referencia y disponibilidad en UI está en [estado funcional del backend](../../Sterinova-Backend/docs/arquitectura/estado-implementado.md#tipos-de-cotización-prefijos-y-disponibilidad).
-- La auditoría documental y sus límites de verificación están en el [informe del backend](../../Sterinova-Backend/docs/archivo/2026-11-10/estado-proyecto/auditoria-docs-2026-11-06.md).
-- El cierre, sus fuentes canónicas y enlaces cruzados están en la [revisión de calidad documental](../../Sterinova-Backend/docs/archivo/2026-11-10/estado-proyecto/revision-calidad-documental.md).
-- El [resumen ejecutivo de cierre](../../Sterinova-Backend/docs/archivo/2026-11-10/estado-proyecto/resumen-cierre-auditoria-2026-11-06.md) y el [checklist operativo](../../Sterinova-Backend/docs/calidad-y-pruebas/checklist-verificacion-operativa.md) preparan la siguiente fase; no certifican operación.
+## Referencias funcionales y operativas
 
-## Documentos históricos
+- [Arquitectura e integración](arquitectura/integracion-y-stack.md): stack, sesión, API y PDF.
+- [Módulos y rutas visibles](estado-proyecto/modulos.md): referencia verificada el 6 de noviembre de 2026; contrasta rutas y comportamientos con el código actual.
+- [Navegación y permisos visibles](arquitectura/navegacion-y-permisos.md).
+- [Pruebas frontend](calidad-y-pruebas/pruebas-frontend.md).
+- [Desarrollo local](manuales/desarrollo-local.md).
+- [Principios UI](ui-ux/principios-y-patrones.md), [accesibilidad](ui-ux/accesibilidad.md), [flujos críticos](ui-ux/flujos-criticos.md) y [sistema de diseño](ui-ux/design-system.md).
+- Las reglas de negocio y contratos API canónicos se mantienen en el [Backend](../../Sterinova-Backend/docs/README.md).
 
-- [Diseño inicial de base de datos](estado-proyecto/historico/diseno-base-de-datos-inicial.md): propuesta inicial, no representa el esquema actual. Para el esquema vigente, consulta [esquema y migraciones del backend](../../Sterinova-Backend/docs/base-de-datos/esquema-y-migraciones.md).
+## Material con vigencia limitada
+
+- `estado-proyecto/plan-accion-*` y `estado-proyecto/reporte-fase*` son planes y registros de ejecución de noviembre de 2026, no instrucciones para tareas nuevas.
+- `estado-proyecto/baseline-fase0.md`, `kickoff/` y `estado-proyecto/historico/` conservan antecedentes.
+- `arquitectura/auditoria-dependencias.md` y los documentos fechados describen una revisión puntual; confirma las dependencias y el código actuales antes de actuar.
+
+Se conservan los documentos originales en sus rutas; no se eliminaron ni consolidaron en este índice. Lee el material histórico solo cuando una tarea necesite trazabilidad.
