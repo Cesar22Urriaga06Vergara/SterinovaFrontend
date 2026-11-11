@@ -17,9 +17,9 @@ Los flujos críticos de login, cotización, estados de Calidad y descarga PDF es
 | Usuarios | `/usuarios` lista; diálogos crean/editar/actualizan contraseña/estado. | Backend restringe a Admin. Gestión de foco de diálogos debe probarse con teclado. |
 | Formatos y sellos | `/configuracion/plantillas` mantiene formatos/versiones; `/configuracion/sellos` mantiene recursos gráficos. | Backend restringe a Admin; sello no representa firma digital. |
 
-> **Fuentes canónicas:** rutas frontend en [módulos y rutas](../estado-proyecto/modulos.md), API/permisos en [API backend](../../../backend_sterinova/docs/arquitectura/api-y-contratos.md), reglas funcionales de flujos y PDF en [módulos backend](../../../backend_sterinova/docs/estado-proyecto/modulos.md). Esta página sintetiza los recorridos de interfaz.
+> **Fuentes canónicas:** rutas frontend en [módulos y rutas](../estado-proyecto/modulos.md), API/permisos en [API backend](../../../Sterinova-Backend/docs/arquitectura/api-y-contratos.md), reglas funcionales de flujos y PDF en [módulos backend](../../../Sterinova-Backend/docs/arquitectura/estado-implementado.md). Esta página sintetiza los recorridos de interfaz.
 
-Fuentes: páginas bajo `src/app/(erp)/`, componentes PDF en `src/components/pdf/` y cliente `src/lib/api.ts`. La lógica de negocio y endpoints se documenta en el [mapa API backend](../../../backend_sterinova/docs/arquitectura/api-y-contratos.md).
+Fuentes: páginas bajo `src/app/(erp)/`, componentes PDF en `src/components/pdf/` y cliente `src/lib/api.ts`. La lógica de negocio y endpoints se documenta en el [mapa API backend](../../../Sterinova-Backend/docs/arquitectura/api-y-contratos.md).
 
 ## Pruebas E2E
 

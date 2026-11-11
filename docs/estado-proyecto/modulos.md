@@ -28,13 +28,13 @@ Los enlaces de navegación se definen en `src/lib/navigation.ts`; `/calidad` y `
 | `/configuracion/plantillas` | Gestión de formatos y versiones documentales. |
 | `/configuracion/sellos` | Gestión de sellos de certificación. |
 
-Las rutas internas `/internal/pdf/cotizacion` y `/internal/pdf/certificado` son páginas de render para Playwright, no páginas normales de navegación. El flujo, el QR y el hash se describen en [módulos backend](../../../backend_sterinova/docs/estado-proyecto/modulos.md#pdf-oficial-y-documentos); aquí solo se identifica la integración de rutas internas.
+Las rutas internas `/internal/pdf/cotizacion` y `/internal/pdf/certificado` son páginas de render para Playwright, no páginas normales de navegación. El flujo, el QR y el hash se describen en [módulos backend](../../../Sterinova-Backend/docs/arquitectura/estado-implementado.md#pdf-oficial-y-documentos); aquí solo se identifica la integración de rutas internas.
 
 ## Cotizaciones
 
-> **Fuente canónica:** tipos, prefijos y disponibilidad UI/backend se mantienen en [estado funcional del backend](../../../backend_sterinova/docs/estado-proyecto/modulos.md#tipos-de-cotización-prefijos-y-disponibilidad). Este apartado solo señala la correspondencia visible en interfaz.
+> **Fuente canónica:** tipos, prefijos y disponibilidad UI/backend se mantienen en [estado funcional del backend](../../../Sterinova-Backend/docs/arquitectura/estado-implementado.md#tipos-de-cotización-prefijos-y-disponibilidad). Este apartado solo señala la correspondencia visible en interfaz.
 
-La interfaz ofrece `INDUSTRIAL_ETO`, `INSTITUCIONAL_ETO`, `INSTITUCIONAL_VAPOR`, `INSUMOS` y `LAVANDERIA`. El backend acepta además `FARMACEUTICO` y `FABRICANTE`, que no aparecen en el selector UI. El mapa de prefijos y formatos de referencia está en [estado funcional del backend](../../../backend_sterinova/docs/estado-proyecto/modulos.md#tipos-de-cotización-prefijos-y-disponibilidad).
+La interfaz ofrece `INDUSTRIAL_ETO`, `INSTITUCIONAL_ETO`, `INSTITUCIONAL_VAPOR`, `INSUMOS` y `LAVANDERIA`. El backend acepta además `FARMACEUTICO` y `FABRICANTE`, que no aparecen en el selector UI. El mapa de prefijos y formatos de referencia está en [estado funcional del backend](../../../Sterinova-Backend/docs/arquitectura/estado-implementado.md#tipos-de-cotización-prefijos-y-disponibilidad).
 
 La sesión del cliente API adjunta el JWT de `localStorage` y elimina la sesión cuando el API responde `401`; el frontend no comprueba por sí mismo la expiración antes de cada solicitud. El formulario de login aún usa una URL local fija, como se detalla en [integración y stack](../arquitectura/integracion-y-stack.md).
 

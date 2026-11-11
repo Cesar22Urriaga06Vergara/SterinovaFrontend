@@ -878,15 +878,15 @@ F0 ──► F1 ──► F2 ──┬──► F3 ──► F6 ──► F7 ─
 
 
 
-- Auditoría del 6-nov: `../backend_sterinova/docs/estado-proyecto/auditoria-docs-2026-11-06.md`
+- Auditoría del 6-nov: `../Sterinova-Backend/docs/archivo/2026-11-10/estado-proyecto/auditoria-docs-2026-11-06.md`
 
-- Revisión de calidad documental: `../backend_sterinova/docs/estado-proyecto/revision-calidad-documental.md`
+- Revisión de calidad documental: `../Sterinova-Backend/docs/archivo/2026-11-10/estado-proyecto/revision-calidad-documental.md`
 
-- Resumen de cierre: `../backend_sterinova/docs/estado-proyecto/resumen-cierre-auditoria-2026-11-06.md`
+- Resumen de cierre: `../Sterinova-Backend/docs/archivo/2026-11-10/estado-proyecto/resumen-cierre-auditoria-2026-11-06.md`
 
-- Checklist operativo: `../backend_sterinova/docs/calidad-y-pruebas/checklist-verificacion-operativa.md`
+- Checklist operativo: `../Sterinova-Backend/docs/calidad-y-pruebas/checklist-verificacion-operativa.md`
 
-- Estado funcional backend: `../backend_sterinova/docs/estado-proyecto/modulos.md`
+- Estado funcional backend: `../Sterinova-Backend/docs/arquitectura/estado-implementado.md`
 
 - Integración y stack: `../docs/arquitectura/integracion-y-stack.md`
 

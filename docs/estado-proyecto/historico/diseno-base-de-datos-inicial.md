@@ -2,7 +2,7 @@
 > **Verificado contra:** no revalidado; se conserva como referencia del diseño inicial.
 > **Alcance:** propuesta inicial de entidades y restricciones.
 > **No cubre:** esquema vigente ni estado de MariaDB.
-> **Reemplazado por:** [esquema y migraciones vigentes del backend](../../../../backend_sterinova/docs/base-de-datos/esquema-y-migraciones.md).
+> **Reemplazado por:** [esquema y migraciones vigentes del backend](../../../../Sterinova-Backend/docs/base-de-datos/esquema-y-migraciones.md).
 
 # 🗄️ Base de Datos (MariaDB)
 

@@ -5,7 +5,7 @@
 > **Alcance:** pruebas unitarias `.mjs` y flujos E2E de Playwright con API simulada.
 > **Fuente canónica de:** alcance y comandos de pruebas frontend.
 
-> **Fuente canónica:** el inventario y estado de verificación de ambos repositorios está en [pruebas backend](../../../backend_sterinova/docs/calidad-y-pruebas/pruebas.md). Esta página solo detalla los archivos y límites propios de frontend.
+> **Fuente canónica:** el inventario y estado de verificación de ambos repositorios está en [pruebas backend](../../../Sterinova-Backend/docs/calidad-y-pruebas/pruebas.md). Esta página solo detalla los archivos y límites propios de frontend.
 
 `npm run test` ejecuta la suite `.mjs` de `tests/` mediante `node --test tests/*.test.mjs`.
 

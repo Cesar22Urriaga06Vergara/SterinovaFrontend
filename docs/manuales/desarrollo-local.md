@@ -21,6 +21,6 @@ Abre `http://localhost:3000`.
 
 El cliente Axios utiliza `NEXT_PUBLIC_API_URL`; si no se define, usa `http://localhost:3001`. El formulario de login todavía llama a `http://localhost:3001/auth/login` directamente, de modo que cambiar la variable no cambia esa llamada. Configura backend y frontend de manera compatible.
 
-Para renderizado oficial de PDFs, el frontend debe ser accesible desde el backend por `PDF_RENDER_BASE_URL` o `FRONTEND_INTERNAL_URL`, y ambos entornos necesitan el mismo `PDF_RENDER_SECRET` privado. Consulta [integración](../arquitectura/integracion-y-stack.md) y el [manual local del backend](../../../backend_sterinova/docs/manuales/configuracion-local.md).
+Para renderizado oficial de PDFs, el frontend debe ser accesible desde el backend por `PDF_RENDER_BASE_URL` o `FRONTEND_INTERNAL_URL`, y ambos entornos necesitan el mismo `PDF_RENDER_SECRET` privado. Consulta [integración](../arquitectura/integracion-y-stack.md) y el [manual local del backend](../../../Sterinova-Backend/docs/manuales/configuracion-local.md).
 
 No guardes credenciales ni secretos en archivos versionados.

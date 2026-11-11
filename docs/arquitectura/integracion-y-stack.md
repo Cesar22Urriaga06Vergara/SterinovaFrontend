@@ -9,7 +9,7 @@ La aplicación usa Next.js 16.4.5, React 19.3 y TypeScript. Las rutas protegidas
 
 ## API y sesión
 
-> **Fuente canónica:** autenticación, roles y controles backend se documentan en [arquitectura y seguridad del backend](../../../backend_sterinova/docs/arquitectura/arquitectura-y-stack.md). Esta página describe cómo la interfaz consume la sesión.
+> **Fuente canónica:** autenticación, roles y controles backend se documentan en [arquitectura y seguridad del backend](../../../Sterinova-Backend/docs/arquitectura/arquitectura-y-stack.md). Esta página describe cómo la interfaz consume la sesión.
 
 `src/lib/api.ts` crea el cliente Axios con `NEXT_PUBLIC_API_URL` y valor local predeterminado `http://localhost:3001`. El interceptor envía `Authorization: Bearer <token>` desde `localStorage`, redirige al login si falta sesión y limpia la sesión ante respuesta 401. El formulario de login usa directamente `http://localhost:3001/auth/login`, por lo que no sigue `NEXT_PUBLIC_API_URL` actualmente.
 
@@ -19,10 +19,10 @@ El frontend no valida proactivamente el vencimiento del JWT; elimina la sesión 
 
 ## PDF
 
-> **Fuente canónica:** comportamiento del generador, hash, almacenamiento y QR se documenta en [módulos backend](../../../backend_sterinova/docs/estado-proyecto/modulos.md). Aquí solo se describe la integración frontend.
+> **Fuente canónica:** comportamiento del generador, hash, almacenamiento y QR se documenta en [módulos backend](../../../Sterinova-Backend/docs/arquitectura/estado-implementado.md). Aquí solo se describe la integración frontend.
 
 Los PDFs oficiales de cotización y certificado los genera Playwright en el backend abriendo las rutas internas de render (`/internal/pdf/cotizacion` y `/internal/pdf/certificado`). El frontend contiene los componentes React y el QR del certificado. Las páginas internas validan un token de render privado usando `PDF_RENDER_SECRET`; esa variable no debe llevar prefijo público. La UI emite cotizaciones con `POST /cotizaciones/:id/emitir` y descarga cotizaciones/certificados con `GET /cotizaciones/:id/descargar` y `GET /certificados/:id/descargar`; no genera el PDF oficial con `html2pdf.js` o jsPDF.
 
-Los componentes PDF usan `/Logo1.png` y `/certificaciones-icontec-iqnet.jpeg` en cotizaciones y certificados, además de `/sello-calidad.png` en el certificado. Los archivos correspondientes están en `public/`. La dependencia `html2pdf.js` está declarada en el proyecto, pero no se usa en el flujo PDF oficial; no se encontró dependencia o uso de jsPDF. Las referencias y el flujo completo están en la [documentación del backend](../../../backend_sterinova/docs/estado-proyecto/modulos.md#pdf-oficial-y-documentos).
+Los componentes PDF usan `/Logo1.png` y `/certificaciones-icontec-iqnet.jpeg` en cotizaciones y certificados, además de `/sello-calidad.png` en el certificado. Los archivos correspondientes están en `public/`. La dependencia `html2pdf.js` está declarada en el proyecto, pero no se usa en el flujo PDF oficial; no se encontró dependencia o uso de jsPDF. Las referencias y el flujo completo están en la [documentación del backend](../../../Sterinova-Backend/docs/arquitectura/estado-implementado.md#pdf-oficial-y-documentos).
 
 Consulta el [manual de desarrollo local](../manuales/desarrollo-local.md).
