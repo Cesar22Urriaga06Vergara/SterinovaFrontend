@@ -18,10 +18,8 @@ import {
 import {
   getActiveNavigationHref,
   getVisibleNavigationSections,
-  type AppRole,
   type NavigationIcon,
 } from "@/lib/navigation";
-import { useStoredUser } from "@/lib/stored-user-hook";
 import { useSession } from "@/lib/session";
 
 const icons: Record<NavigationIcon, LucideIcon> = {
@@ -43,7 +41,6 @@ type SidebarProps = {
 
 export function Sidebar({ mobileOpen, onNavigate }: SidebarProps) {
   const pathname = usePathname();
-  const user = useStoredUser();
   const { permissions } = useSession();
   const [isMobileViewport, setIsMobileViewport] = useState(false);
 
@@ -55,8 +52,7 @@ export function Sidebar({ mobileOpen, onNavigate }: SidebarProps) {
     return () => mediaQuery.removeEventListener("change", updateViewport);
   }, []);
 
-  const role = user?.rol as AppRole | undefined;
-  const sections = getVisibleNavigationSections(role, permissions);
+  const sections = getVisibleNavigationSections(permissions);
   const hrefs = sections.flatMap((section) => section.links.map((link) => link.href));
   const activeHref = getActiveNavigationHref(pathname, hrefs);
 

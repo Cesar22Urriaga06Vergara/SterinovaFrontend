@@ -2,11 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
-import { useStoredUser } from "@/lib/stored-user-hook";
+import { useSession } from "@/lib/session";
 
 export function Header() {
   const router = useRouter();
-  const user = useStoredUser();
+  const { user } = useSession();
 
   function handleLogout() {
     localStorage.removeItem("access_token");
@@ -20,8 +20,8 @@ export function Header() {
         <p className="text-sm font-semibold text-sterinova-dark">
           {user?.nombre ?? "Usuario"}
         </p>
-        {user?.rol ? (
-          <p className="text-xs text-secondary">{user.rol}</p>
+        {user?.profiles?.length ? (
+          <p className="text-xs text-secondary">{user.profiles?.map(profile => profile.name).join(" · ")}</p>
         ) : null}
       </div>
 

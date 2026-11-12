@@ -254,7 +254,7 @@ export default function CotizacionesPage() {
                             </button>
                           ) : null}
                           <SolicitudAnulacionButton cotizacion={cotizacion} onSuccess={setSuccess} />
-                          {can("cotizaciones.editar") && isEditableDraft(cotizacion) ? (
+                          {can("cotizaciones.aprobar_interna") && sessionUser?.id !== cotizacion.creador_id && isEditableDraft(cotizacion) ? (
                             <button
                               type="button"
                               onClick={() => void handleAprobar(cotizacion)}
@@ -283,6 +283,14 @@ export default function CotizacionesPage() {
               <h2 className="font-semibold text-sterinova-dark">Borrador · {previewCotizacion.data.consecutivo}</h2>
               <p className="text-xs text-slate-500">Vista previa. El PDF oficial se fija al emitir.</p>
             </div>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-sterinova-dark/15 px-3 py-2 text-sm font-medium text-sterinova-dark hover:bg-sterinova-light"
+            >
+              <Download className="h-4 w-4" aria-hidden />
+              Exportar PDF
+            </button>
             {can("cotizaciones.editar") && isEditableDraft(previewCotizacion.source) && <Link href={`/comercial/cotizaciones/${previewCotizacion.source.id}/editar`} className="rounded border px-3 py-2">Editar</Link>}
             <SolicitudAnulacionButton cotizacion={previewCotizacion.source} onSuccess={(message) => { setSuccess(message); setPreviewCotizacion(null); }} />
             <button type="button" onClick={() => setPreviewCotizacion(null)} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100" aria-label="Cerrar vista previa">

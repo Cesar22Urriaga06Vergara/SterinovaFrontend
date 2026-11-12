@@ -4,7 +4,7 @@ import { type FormEvent, useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import { Plus } from "lucide-react";
 import { api } from "@/lib/api";
-import { useStoredUser } from "@/lib/stored-user-hook";
+import { useSession } from "@/lib/session";
 import { SealsTable, type SealRecord } from "./SealsTable";
 import { UploadSealDialog } from "./UploadSealDialog";
 
@@ -23,7 +23,7 @@ async function fetchSeals(): Promise<SealRecord[]> {
 }
 
 export default function CertificationSealsPage() {
-  const user = useStoredUser();
+  const { can } = useSession();
   const [seals, setSeals] = useState<SealRecord[]>([]);
   const [imageUrls, setImageUrls] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
@@ -155,7 +155,7 @@ export default function CertificationSealsPage() {
     }
   }
 
-  if (user?.rol !== "Admin") {
+  if (!can("sellos.ver")) {
     return <section className="mx-auto max-w-3xl rounded-xl border border-red-200 bg-white p-6 text-sm text-red-700 shadow-sm">Solo un administrador puede gestionar los sellos.</section>;
   }
 

@@ -1,4 +1,3 @@
-export type UserRole = "Admin" | "Comercial" | "Logistica" | "Planta" | "Calidad";
 
 export type UserRecord = {
   id: number;
@@ -8,7 +7,6 @@ export type UserRecord = {
   celular: string | null;
   email_contacto: string | null;
   email: string;
-  rol: UserRole;
   activo: boolean;
 };
 
@@ -22,7 +20,6 @@ export type UserForm = Omit<UserRecord, "id" | "activo" | "apellido" | "cargo" |
   scope_id: string;
 };
 
-export const USER_ROLES: UserRole[] = ["Admin", "Comercial", "Logistica", "Planta", "Calidad"];
 
 export const blankUserForm = (): UserForm => ({
   nombre: "",
@@ -31,7 +28,6 @@ export const blankUserForm = (): UserForm => ({
   celular: "",
   email_contacto: "",
   email: "",
-  rol: "Comercial",
   password: "",
   role_id: "",
   scope_id: "",

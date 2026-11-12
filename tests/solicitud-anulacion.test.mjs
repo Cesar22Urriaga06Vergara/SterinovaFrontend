@@ -91,22 +91,21 @@ test("Axios usa las rutas, bodies y ámbito correctos sin enviar identidades", a
 
 test("ruta y menú de solicitudes dependen del permiso validado, incluso para Admin", () => {
   const { canAccessPath, getVisibleNavigationSections } = load("navigation.ts");
-  for (const role of ["Comercial", "Admin", "Logistica"]) {
-    assert.equal(canAccessPath("/solicitudes", role, []), false);
-    assert.equal(
-      canAccessPath("/solicitudes", role, ["solicitudes_anulacion.ver"]),
-      true,
+  assert.equal(canAccessPath("/solicitudes", []), false);
+  assert.equal(canAccessPath("/solicitudes", ["Admin"]), false);
+  assert.equal(
+    canAccessPath("/solicitudes", ["solicitudes_anulacion.ver"]),
+    true,
+  );
+  const hrefs = (permissions) =>
+    getVisibleNavigationSections(permissions).flatMap((s) =>
+      s.links.map((l) => l.href),
     );
-    const hrefs = (permissions) =>
-      getVisibleNavigationSections(role, permissions).flatMap((s) =>
-        s.links.map((l) => l.href),
-      );
-    assert.equal(hrefs([]).includes("/solicitudes"), false);
-    assert.equal(
-      hrefs(["solicitudes_anulacion.ver"]).includes("/solicitudes"),
-      true,
-    );
-  }
+  assert.equal(hrefs([]).includes("/solicitudes"), false);
+  assert.equal(
+    hrefs(["solicitudes_anulacion.ver"]).includes("/solicitudes"),
+    true,
+  );
 });
 
 test("el componente real no renderiza el botón en borrador ni sin permiso", () => {

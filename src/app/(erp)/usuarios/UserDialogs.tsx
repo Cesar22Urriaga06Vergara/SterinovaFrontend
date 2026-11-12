@@ -40,17 +40,11 @@ export function UserFormDialog({
             <Field label="Celular" maxLength={50} value={form.celular ?? ""} onChange={(value) => onFormChange({ ...form, celular: value })} />
             <Field label="Email de contacto" type="email" maxLength={255} error={errors.email_contacto} value={form.email_contacto ?? ""} onChange={(value) => onFormChange({ ...form, email_contacto: value }, "email_contacto")} />
             <Field label="Email de acceso" type="email" required maxLength={255} error={errors.email} value={form.email} onChange={(value) => onFormChange({ ...form, email: value }, "email")} />
-            {editing ? <label className="block text-sm font-medium text-slate-700">
-              <span className="mb-1.5 block">Rol de compatibilidad</span>
-              <select required disabled={Boolean(editing)} value={form.rol} onChange={(event) => onFormChange({ ...form, rol: event.target.value as UserForm["rol"] })} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 outline-none focus:border-sterinova-teal focus:ring-2 focus:ring-sterinova-teal/20">
-                <option value={form.rol}>{form.rol}</option>
-              </select>
-              <span className="mt-1 block text-xs text-slate-500">Los perfiles y permisos efectivos se configuran con el botón Roles de la cuenta.</span>
-            </label> : <>
-              <label className="block text-sm font-medium text-slate-700">Perfil RBAC
-                <select aria-label="Perfil RBAC" value={form.role_id} onChange={event => onFormChange({ ...form, role_id: event.target.value, scope_id: "" })} className="mt-1.5 block w-full rounded-lg border p-2.5" required>
+            {!editing ? <>
+              <label className="block text-sm font-medium text-slate-700">Rol
+                <select aria-label="Rol" value={form.role_id} onChange={event => onFormChange({ ...form, role_id: event.target.value, scope_id: "" })} className="mt-1.5 block w-full rounded-lg border p-2.5" required>
                   <option value="">Selecciona un perfil</option>
-                  {catalog.roles.map(role => <option key={role.id} value={role.id} disabled={!role.active}>{role.name} ({role.code}){!role.active ? " — inactivo" : ""}</option>)}
+                  {catalog.roles.map(role => <option key={role.id} value={role.id} disabled={!role.active}>{role.name}{!role.active ? " — inactivo" : ""}</option>)}
                 </select>
               </label>
               <label className="block text-sm font-medium text-slate-700">Ámbito inicial
@@ -59,7 +53,8 @@ export function UserFormDialog({
                   {catalog.scopes.filter(scope => { const role = catalog.roles.find(role => role.id === Number(form.role_id)); return role?.kind === "PLATFORM" ? scope.kind === "GLOBAL" : scope.kind !== "GLOBAL" || role?.global_assignable; }).map(scope => <option key={scope.id} value={scope.id}>{scope.name}</option>)}
                 </select>
               </label>
-            </>}
+            </> : null}
+            {!editing && form.role_id ? <div className="sm:col-span-2 rounded-lg bg-slate-50 p-3 text-sm"><p className="font-medium">Responsabilidades del rol</p><ul className="mt-2 list-disc pl-5">{catalog.roles.find(role => role.id === Number(form.role_id))?.permissions?.map(permission => <li key={permission.code}>{permission.label}</li>)}</ul></div> : null}
             {!editing ? <Field label="Contraseña inicial" type="password" required minLength={10} error={errors.password} value={form.password} onChange={(value) => onFormChange({ ...form, password: value }, "password")} /> : null}
           </div>
           {pageError ? <p role="alert" className="text-sm text-red-700">{pageError}</p> : null}

@@ -35,7 +35,7 @@ export type CertificadoEsterilizacion = {
   parametros_tecnicos: Record<string, unknown> | null;
   controles_biologicos: string | null;
   cicloEsterilizacion: CicloCalidad;
-  aprobador: { id: number; nombre: string; rol: string } | null;
+  aprobador: { id: number; nombre: string } | null;
 };
 
 export type ValidacionCertificado = {

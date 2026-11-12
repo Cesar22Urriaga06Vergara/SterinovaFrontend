@@ -60,7 +60,7 @@ export function UsersTable({
                     {user.cargo ? <p className="mt-0.5 text-xs text-slate-500">{user.cargo}</p> : null}
                   </td>
                   <td className="px-5 py-4 text-slate-600">{user.email}</td>
-                  <td className="px-5 py-4"><div className="space-y-1">{assignments.filter(item => item.user_id === user.id).map(item => <p key={`${item.kind}-${item.id}`} className={`text-xs ${!item.active || !item.role_active ? "text-amber-700" : "text-slate-700"}`}>{item.name} · {item.scope_name}{!item.active ? " · asignación inactiva" : !item.role_active ? " · perfil inactivo" : ""}</p>)}{assignments.every(item => item.user_id !== user.id) ? <p className="text-xs text-amber-700">Sin asignación RBAC</p> : null}<p className="text-xs text-slate-500">Compatibilidad: {user.rol}</p></div></td>
+                  <td className="px-5 py-4"><div className="space-y-1">{assignments.filter(item => item.user_id === user.id).map(item => <p key={`${item.kind}-${item.id}`} className={`text-xs ${!item.active || !item.role_active ? "text-amber-700" : "text-slate-700"}`}>{item.name} · {item.scope_name}{!item.active ? " · asignación inactiva" : !item.role_active ? " · perfil inactivo" : ""}</p>)}{assignments.every(item => item.user_id !== user.id) ? <p className="text-xs text-amber-700">Sin asignación RBAC</p> : null}</div></td>
                   <td className="px-5 py-4">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${user.activo ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"}`}>
                       {user.activo ? "Activo" : "Inactivo"}

@@ -1,11 +1,7 @@
-export type AppRole = "Admin" | "Comercial" | "Logistica" | "Planta" | "Calidad";
-
-const allRoles: readonly AppRole[] = ["Admin", "Comercial", "Logistica", "Planta", "Calidad"];
-
 export const navigationSections = [
   {
     title: "Principal",
-    links: [{ href: "/", label: "Inicio", icon: "home", roles: allRoles }],
+    links: [{ href: "/", label: "Inicio", icon: "home", session: true }],
   },
   {
     title: "Maestros",
@@ -34,27 +30,12 @@ export const navigationSections = [
 
 export type NavigationIcon = (typeof navigationSections)[number]["links"][number]["icon"];
 
-const roleHome: Record<AppRole, string> = {
-  Admin: "/",
-  Comercial: "/comercial",
-  Logistica: "/logistica",
-  Planta: "/planta",
-  Calidad: "/calidad",
-};
-
-export function isAppRole(value: string | undefined): value is AppRole {
-  return Boolean(value && allRoles.includes(value as AppRole));
+export function getHomePath(permissions: readonly string[] = []): string {
+ if (permissions.includes('usuarios.identidad.gestionar')) return '/';
+ return ['/comercial','/logistica','/planta','/calidad','/'].find(path => canAccessPath(path, permissions)) ?? '/';
 }
 
-export function getRoleHomePath(role: string | undefined, permissions: readonly string[] = []): string {
-  if (!isAppRole(role)) return "/login";
-  const preferred = roleHome[role];
-  if (canAccessPath(preferred, role, permissions)) return preferred;
-  const candidates = ["/comercial", "/logistica", "/planta", "/calidad", "/"];
-  return candidates.find((path) => canAccessPath(path, role, permissions)) ?? "/login";
-}
-
-export function canAccessPath(pathname: string, role: string | undefined, permissions: readonly string[] = []): boolean {
+export function canAccessPath(pathname: string, permissions: readonly string[] = []): boolean {
   if (pathname === "/") return true;
   const pathPermissions: readonly [string, string][] = [
     ["/comercial/clientes", "clientes.ver"],
@@ -71,15 +52,15 @@ export function canAccessPath(pathname: string, role: string | undefined, permis
   const match = [...pathPermissions]
     .sort(([first], [second]) => second.length - first.length)
     .find(([prefix]) => pathname === prefix || pathname.startsWith(`${prefix}/`));
-  return match ? permissions.includes(match[1]) : isAppRole(role) && pathname === "/";
+  return match ? permissions.includes(match[1]) : false;
 }
 
-export function getVisibleNavigationSections(role: string | undefined, permissions: readonly string[]) {
+export function getVisibleNavigationSections(permissions: readonly string[]) {
   return navigationSections.map((section) => ({
     ...section,
     links: section.links.filter((link) => "permission" in link
       ? permissions.includes(link.permission)
-      : link.roles.some((allowedRole) => allowedRole === role)),
+      : true),
   })).filter((section) => section.links.length > 0);
 }
 

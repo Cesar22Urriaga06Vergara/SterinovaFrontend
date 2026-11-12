@@ -28,7 +28,7 @@ test("parses a valid stored user", () => {
     JSON.parse(JSON.stringify(compiledModule.exports.parseStoredUser(
       '{"nombre":"Ana","email":"ana@example.com","rol":"Admin"}',
     ))),
-    { nombre: "Ana", email: "ana@example.com", rol: "Admin" },
+    { nombre: "Ana", email: "ana@example.com" },
   );
 });
 

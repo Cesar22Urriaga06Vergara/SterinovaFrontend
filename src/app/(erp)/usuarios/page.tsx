@@ -112,7 +112,6 @@ export default function UsersPage() {
       celular: user.celular ?? "",
       email_contacto: user.email_contacto ?? "",
       email: user.email,
-      rol: user.rol,
       password: "",
       role_id: "",
       scope_id: "",
@@ -135,7 +134,7 @@ export default function UsersPage() {
     const errors = validateUserForm(form, Boolean(editing));
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
-    if (!editing && (!form.role_id || !form.scope_id)) { setPageError("Selecciona un perfil RBAC y su ámbito."); return; }
+    if (!editing && (!form.role_id || !form.scope_id)) { setPageError("Selecciona un rol y su ámbito."); return; }
 
     setSaving(true);
     const userData = {
@@ -145,7 +144,6 @@ export default function UsersPage() {
       celular: form.celular.trim() || null,
       email_contacto: form.email_contacto.trim() || null,
       email: form.email.trim(),
-      ...(!editing ? { rol: form.rol } : {}),
     };
     try {
       if (editing) {

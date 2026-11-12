@@ -14,9 +14,18 @@ type Session = {
   available_scopes: Scope[];
 };
 const SessionContext = createContext<(Session & {
+  ready: boolean;
   can: (permission: string) => boolean;
   selectScope: (id: number) => void;
 }) | null>(null);
+
+const EMPTY_SESSION: Session = {
+  user: {},
+  permissions: [],
+  capabilities: [],
+  current_scope: null,
+  available_scopes: [],
+};
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -49,12 +58,40 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener("focus", onFocus);
     return () => { active = false; window.removeEventListener("focus", onFocus); };
   }, [pathname, refresh]);
-  if (error) return <div role="alert" className="p-6">No se pudo validar la sesión. <button onClick={() => void refresh()}>Reintentar</button></div>;
-  if (!session) return <div role="status" className="p-6">Validando sesión...</div>;
-  return <SessionContext.Provider value={{ ...session,
-    can: permission => session.permissions.includes(permission),
-    selectScope: id => { setSession(null); void refresh(id); },
-  }}>{children}</SessionContext.Provider>;
+  const activeSession = session ?? EMPTY_SESSION;
+  const ready = Boolean(session) && !error;
+  return (
+    <SessionContext.Provider
+      value={{
+        ...activeSession,
+        ready,
+        can: (permission) => activeSession.permissions.includes(permission),
+        selectScope: (id) => {
+          setSession(null);
+          void refresh(id);
+        },
+      }}
+    >
+      {error ? (
+        <div role="alert" className="p-6">
+          No se pudo validar la sesión.{" "}
+          <button onClick={() => void refresh()}>Reintentar</button>
+        </div>
+      ) : !session ? (
+        <div role="status" className="p-6">
+          Validando sesión...
+        </div>
+      ) : null}
+      <div
+        hidden={!ready}
+        aria-hidden={!ready}
+        inert={!ready}
+        className={!ready ? "hidden" : undefined}
+      >
+        {children}
+      </div>
+    </SessionContext.Provider>
+  );
 }
 
 export function useSession() {

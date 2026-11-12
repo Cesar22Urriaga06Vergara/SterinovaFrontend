@@ -7,7 +7,7 @@ import type { UserRecord } from "./types";
 import { userFullName } from "./types";
 
 export type RoleAssignment = { id: number; user_id: number; role_id: number; scope_id: number; active: number | boolean; role_active: number | boolean; name: string; code: string; kind: string; scope_name: string };
-export type Role = { id: number; code: string; name: string; kind: string; active: boolean; global_assignable: boolean };
+export type Role = { id: number; code: string; name: string; kind: string; active: boolean; global_assignable: boolean; permissions?: {code: string; label: string}[] };
 export type Scope = { id: number; name: string; kind: string };
 
 export function UserRolesDialog({ user, assignments, sessionUserId, onClose, onChanged }: {
@@ -51,7 +51,7 @@ export function UserRolesDialog({ user, assignments, sessionUserId, onClose, onC
         <label className="block text-sm font-medium">Perfil
           <select aria-label="Perfil" required value={roleId} onChange={event => { setRoleId(event.target.value); setScopeId(""); }} className="mt-1 block w-full rounded-lg border p-2.5">
             <option value="">Selecciona un perfil</option>
-            {catalog?.roles.map(item => <option key={item.id} value={item.id} disabled={!item.active}>{item.name} ({item.code}){!item.active ? " — inactivo" : ""}</option>)}
+            {catalog?.roles.map(item => <option key={item.id} value={item.id} disabled={!item.active}>{item.name}{!item.active ? " — inactivo" : ""}</option>)}
           </select>
         </label>
         <label className="block text-sm font-medium">Ámbito

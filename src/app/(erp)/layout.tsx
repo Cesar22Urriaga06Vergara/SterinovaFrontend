@@ -2,7 +2,7 @@
 
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
-import { canAccessPath, getRoleHomePath } from "@/lib/navigation";
+import { canAccessPath, getHomePath } from "@/lib/navigation";
 import { SessionProvider, useSession } from "@/lib/session";
 import { useStoredUser } from "@/lib/stored-user-hook";
 import { Menu } from "lucide-react";
@@ -50,7 +50,7 @@ function AuthorizedErpLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const user = useStoredUser();
-  const { can, permissions } = useSession();
+  const { can, permissions, ready } = useSession();
   const quoteRoute =
     pathname === "/comercial/cotizaciones" ||
     pathname.startsWith("/comercial/cotizaciones/");
@@ -58,7 +58,7 @@ function AuthorizedErpLayout({ children }: { children: React.ReactNode }) {
     ? can(
         pathname.endsWith("/nueva") ? "cotizaciones.crear" : "cotizaciones.ver",
       )
-    : canAccessPath(pathname, user.rol, permissions);
+    : canAccessPath(pathname, permissions);
   const hydrated = useSyncExternalStore(
     subscribeToStorage,
     getClientHydrationSnapshot,
@@ -90,55 +90,74 @@ function AuthorizedErpLayout({ children }: { children: React.ReactNode }) {
   }, [mobileNavOpen]);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || !ready) return;
     if (!hasAccessToken || !user) {
       router.replace("/login");
       return;
     }
     if (!routeAllowed) {
-      router.replace(getRoleHomePath(user.rol, permissions));
+      router.replace(getHomePath(permissions));
     }
-  }, [hasAccessToken, hydrated, pathname, router, user, permissions, routeAllowed]);
+  }, [
+    hasAccessToken,
+    hydrated,
+    pathname,
+    router,
+    user,
+    ready,
+    permissions,
+    routeAllowed,
+  ]);
 
-  const canRenderRoute = routeAllowed;
-  if (!hydrated || !hasAccessToken || !user || !canRenderRoute) {
-    return <LayoutLoading />;
-  }
+  const canRenderRoute =
+    ready && hydrated && hasAccessToken && Boolean(user) && routeAllowed;
 
   return (
-    <div className="flex min-h-screen flex-col bg-sterinova-light md:flex-row">
-      <a
-        href="#main-content"
-        className="sr-only z-50 rounded-control bg-white px-4 py-2 font-semibold text-sterinova-dark shadow focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+    <>
+      {ready && !canRenderRoute ? <LayoutLoading /> : null}
+      <div
+        hidden={!canRenderRoute}
+        aria-hidden={!canRenderRoute}
+        inert={!canRenderRoute}
+        className={
+          canRenderRoute
+            ? "flex min-h-screen flex-col bg-sterinova-light md:flex-row"
+            : "hidden"
+        }
       >
-        Saltar al contenido principal
-      </a>
-      <div className="w-full border-b border-sterinova-dark/5 bg-white px-4 py-2 md:hidden">
-        <button
-          ref={menuButtonRef}
-          id="erp-menu-toggle"
-          type="button"
-          aria-controls="erp-sidebar"
-          aria-expanded={mobileNavOpen}
-          onClick={() => setMobileNavOpen((open) => !open)}
-          className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-sterinova-dark hover:bg-sterinova-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        <a
+          href="#main-content"
+          className="sr-only z-50 rounded-control bg-white px-4 py-2 font-semibold text-sterinova-dark shadow focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
-          <Menu className="h-5 w-5" aria-hidden />
-          Menú
-        </button>
+          Saltar al contenido principal
+        </a>
+        <div className="w-full border-b border-sterinova-dark/5 bg-white px-4 py-2 md:hidden">
+          <button
+            ref={menuButtonRef}
+            id="erp-menu-toggle"
+            type="button"
+            aria-controls="erp-sidebar"
+            aria-expanded={mobileNavOpen}
+            onClick={() => setMobileNavOpen((open) => !open)}
+            className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-sterinova-dark hover:bg-sterinova-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          >
+            <Menu className="h-5 w-5" aria-hidden />
+            Menú
+          </button>
+        </div>
+        <Sidebar mobileOpen={mobileNavOpen} onNavigate={closeMobileNav} />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <Header />
+          <main
+            id="main-content"
+            tabIndex={-1}
+            className="flex-1 overflow-auto bg-sterinova-light p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary md:p-6"
+          >
+            {children}
+          </main>
+        </div>
       </div>
-      <Sidebar mobileOpen={mobileNavOpen} onNavigate={closeMobileNav} />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Header />
-        <main
-          id="main-content"
-          tabIndex={-1}
-          className="flex-1 overflow-auto bg-sterinova-light p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary md:p-6"
-        >
-          {children}
-        </main>
-      </div>
-    </div>
+    </>
   );
 }
 
