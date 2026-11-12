@@ -101,13 +101,13 @@ const clientFields = [
 ] as const;
 
 const commercialTerms = [
-  "TIEMPO DE DESPACHO",
-  "TRANSPORTE",
-  "FORMA DE PAGO",
-  "VALIDEZ DE LA OFERTA",
-  "EL PRECIO INCLUYE",
-  "EL PRECIO NO INCLUYE",
-];
+  ["TIEMPO DE DESPACHO", (data: Cotizacion) => data.tiempo_despacho],
+  ["TRANSPORTE", (data: Cotizacion) => data.transporte],
+  ["FORMA DE PAGO", (data: Cotizacion) => data.forma_pago],
+  ["VALIDEZ DE LA OFERTA", (data: Cotizacion) => data.validez_oferta],
+  ["EL PRECIO INCLUYE", (data: Cotizacion) => data.precio_incluye],
+  ["EL PRECIO NO INCLUYE", (data: Cotizacion) => data.precio_no_incluye],
+] as const;
 
 function valueOrBlank(value: string | null | undefined) {
   return value?.trim() || "";
@@ -348,7 +348,7 @@ export const LegacyCotizacionPDF = forwardRef<HTMLDivElement, Props>(
             </h2>
             <table className="w-full table-fixed border-collapse text-[7.5pt]">
               <tbody>
-                {commercialTerms.map((term) => (
+                {commercialTerms.map(([term, getValue]) => (
                   <tr key={term} className="break-inside-avoid">
                     <th
                       scope="row"
@@ -357,7 +357,9 @@ export const LegacyCotizacionPDF = forwardRef<HTMLDivElement, Props>(
                     >
                       {term}
                     </th>
-                    <td className="border px-[2mm] py-[0.8mm]" style={{ borderColor: template.border }} />
+                    <td className="whitespace-pre-line break-words border px-[2mm] py-[0.8mm]" style={{ borderColor: template.border }}>
+                      {getValue(data)?.trim() ?? ""}
+                    </td>
                   </tr>
                 ))}
                 {data.condiciones_comerciales?.trim() ? (

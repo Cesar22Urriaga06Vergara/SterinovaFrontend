@@ -10,6 +10,7 @@ import {
   Factory,
   FileText,
   Home,
+  Package,
   Settings,
   Truck,
   Users,
@@ -32,6 +33,7 @@ const icons: Record<NavigationIcon, LucideIcon> = {
   settings: Settings,
   users: Users,
   badgeCheck: BadgeCheck,
+  package: Package,
 };
 
 type SidebarProps = {

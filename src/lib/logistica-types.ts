@@ -7,7 +7,23 @@ export type EstadoOrdenServicio =
   | "RECOGIDO"
   | "EN_PLANTA"
   | "PROCESADO"
+  | "ENTREGADO"
   | "CANCELADO";
+
+export type EventoOrden = {
+  tipo: "RECOGIDA" | "RECEPCION_PLANTA" | "PROCESAMIENTO" | "ENTREGA_CLIENTE";
+  ocurrido_at: string;
+  responsable: string;
+  recibido_por?: string | null;
+  entregado_por?: string | null;
+  transportista?: string | null;
+  observaciones?: string | null;
+  materiales: Array<{
+    material_id: number;
+    cantidad: number;
+    cajas?: number;
+  }>;
+};
 
 export type OrdenServicio = {
   version: number;
@@ -15,6 +31,7 @@ export type OrdenServicio = {
   materiales?: MaterialRecibido[];
   id: number;
   consecutivo: string;
+  acta_consecutivo?: string | null;
   cotizacion_id: number;
   fecha_programada: string;
   estado: EstadoOrdenServicio;
@@ -22,6 +39,7 @@ export type OrdenServicio = {
   vehiculo_placa?: string | null;
   observaciones?: string | null;
   cotizacion?: Cotizacion;
+  eventos?: EventoOrden[];
 };
 
 export const ESTADO_COLORES: Record<EstadoOrdenServicio, string> = {
@@ -30,6 +48,7 @@ export const ESTADO_COLORES: Record<EstadoOrdenServicio, string> = {
   RECOGIDO: "bg-orange-100 text-orange-800 ring-orange-200",
   EN_PLANTA: "bg-green-100 text-green-800 ring-green-200",
   PROCESADO: "bg-purple-100 text-purple-800 ring-purple-200",
+  ENTREGADO: "bg-emerald-100 text-emerald-800 ring-emerald-200",
   CANCELADO: "bg-gray-100 text-gray-700 ring-gray-200",
 };
 
@@ -39,6 +58,7 @@ export const ESTADO_LABELS: Record<EstadoOrdenServicio, string> = {
   RECOGIDO: "Recogido",
   EN_PLANTA: "En planta",
   PROCESADO: "Procesado",
+  ENTREGADO: "Entregado",
   CANCELADO: "Cancelado",
 };
 
@@ -52,6 +72,10 @@ export function nextEstadoAction(
       return { label: "Marcar como Recogido", next: "RECOGIDO" };
     case "RECOGIDO":
       return { label: "Marcar En Planta", next: "EN_PLANTA" };
+    case "EN_PLANTA":
+      return null;
+    case "PROCESADO":
+      return { label: "Marcar Entregado", next: "ENTREGADO" };
     default:
       return null;
   }

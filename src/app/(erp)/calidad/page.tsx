@@ -7,6 +7,7 @@ import { api, downloadPdfFromBackend } from "@/lib/api";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/states/ErrorState";
+import { TableState } from "@/components/ui/states/TableState";
 import type { CertificadoEsterilizacion, CicloCalidad } from "@/lib/calidad-types";
 
 function formatDate(value: string) {
@@ -114,6 +115,8 @@ export default function CalidadPage() {
         </p>
       ) : null}
 
+      {loadError ? null : (
+        <div className="space-y-8">
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
@@ -140,9 +143,9 @@ export default function CalidadPage() {
               </thead>
               <tbody className="divide-y divide-sterinova-dark/5">
                 {loading ? (
-                  <tr><td colSpan={6} className="px-4 py-10 text-center text-secondary">Cargando ciclos...</td></tr>
+                  <TableState colSpan={6} message="Cargando ciclos..." loading />
                 ) : pendientes.length === 0 ? (
-                  <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-500">No hay ciclos pendientes de revisión.</td></tr>
+                  <TableState colSpan={6} message="No hay ciclos pendientes de revisión." />
                 ) : pendientes.map((ciclo) => (
                   <tr key={ciclo.id} className="text-sterinova-dark hover:bg-slate-50/70">
                     <td className="px-4 py-3 font-semibold">{ciclo.orden?.consecutivo ?? `#${ciclo.orden_id}`}</td>
@@ -189,9 +192,9 @@ export default function CalidadPage() {
               </thead>
               <tbody className="divide-y divide-sterinova-dark/5">
                 {loading ? (
-                  <tr><td colSpan={5} className="px-4 py-8 text-center text-secondary">Cargando certificados...</td></tr>
+                  <TableState colSpan={5} message="Cargando certificados..." loading />
                 ) : certificados.length === 0 ? (
-                  <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-500">Aún no se han emitido certificados.</td></tr>
+                  <TableState colSpan={5} message="Aún no se han emitido certificados." />
                 ) : certificados.map((certificado) => (
                   <tr key={certificado.id}>
                     <td className="px-4 py-3 font-bold text-sterinova-dark">{certificado.consecutivo}</td>
@@ -228,6 +231,8 @@ export default function CalidadPage() {
           </div>
         </div>
       </section>
+        </div>
+      )}
     </div>
   );
 }

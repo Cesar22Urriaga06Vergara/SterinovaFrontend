@@ -7,6 +7,7 @@ import { api, downloadPdfFromBackend } from "@/lib/api";
 import {
   Cotizacion,
   isEditableDraft,
+  isInternallyApproved,
   formatCurrency,
   labelTipoServicio,
 } from "@/lib/cotizacion-types";
@@ -16,6 +17,7 @@ import type { PdfFormatMetadata } from "@/lib/pdf-render-data";
 import { useSession, useQuoteHeaders } from "@/lib/session";
 import { useStoredUser } from "@/lib/stored-user-hook";
 import { SolicitudAnulacionButton } from "@/components/SolicitudAnulacionButton";
+import { TableState } from "@/components/ui/states/TableState";
 
 type CotizacionPreview = { source: Cotizacion; data: Cotizacion; metadata: PdfFormatMetadata };
 
@@ -148,8 +150,16 @@ export default function CotizacionesPage() {
     try {
       await api.post(`/cotizaciones/${cotizacion.id}/aprobar`, { version: cotizacion.version }, { headers });
       await loadCotizaciones();
-    } catch {
-      setError(`No se pudo aprobar ${cotizacion.consecutivo}.`);
+    } catch (cause) {
+      const response = (
+        cause as { response?: { data?: { message?: string | string[] } } }
+      ).response;
+      const message = response?.data?.message;
+      setError(
+        Array.isArray(message)
+          ? message.join(". ")
+          : message || `No se pudo aprobar ${cotizacion.consecutivo}.`,
+      );
     } finally {
       setApprovingId(null);
     }
@@ -201,9 +211,9 @@ export default function CotizacionesPage() {
               </thead>
               <tbody className="divide-y divide-sterinova-dark/5">
                 {loading ? (
-                  <tr><td colSpan={7} className="px-4 py-8 text-center text-sterinova-teal">Cargando...</td></tr>
+                  <TableState colSpan={7} message="Cargando cotizaciones..." loading />
                 ) : cotizaciones.length === 0 ? (
-                  <tr><td colSpan={7} className="px-4 py-8 text-center text-sterinova-teal">No hay cotizaciones registradas.</td></tr>
+                  <TableState colSpan={7} message="No hay cotizaciones registradas." />
                 ) : cotizaciones.map((cotizacion) => {
                   const emitted = isEmitted(cotizacion);
                   return (
@@ -223,7 +233,7 @@ export default function CotizacionesPage() {
                           {can("cotizaciones.editar") && isEditableDraft(cotizacion) && <Link href={`/comercial/cotizaciones/${cotizacion.id}/editar`} className="rounded-lg border px-2.5 py-1.5 text-xs font-medium">Editar</Link>}
                           {!emitted ? (
                             <>
-                              {can("cotizaciones.emitir") && <button
+                              {can("cotizaciones.emitir") && isInternallyApproved(cotizacion) && <button
                                 type="button"
                                 onClick={() => void handleEmitir(cotizacion)}
                                 disabled={emittingId !== null || downloadingId !== null}

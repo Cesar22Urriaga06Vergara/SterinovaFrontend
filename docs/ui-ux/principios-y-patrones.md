@@ -17,6 +17,11 @@ Las rutas de negocio viven bajo `src/app/(erp)/`; el grupo `(erp)` comparte el l
 
 Usa una página servidor como entrada y extrae a un Client Component solo la interacción que necesite hooks, eventos del navegador o estado local. Para una ruta nueva, confirma que el rol requerido y el destino estén representados en `src/lib/navigation.ts`; no dupliques navegación o controles de sesión dentro de la página.
 
+Las páginas de entrada de cada área deben mostrar únicamente funciones
+implementadas de esa área. No deben incluir selectores para cambiar de área ni
+tarjetas de funcionalidades futuras con apariencia de acción disponible; el
+dashboard contextual y la navegación resuelven el cambio entre áreas.
+
 ### Estructura recomendada
 
 ```tsx

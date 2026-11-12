@@ -39,3 +39,6 @@ La interfaz ofrece `INDUSTRIAL_ETO`, `INSTITUCIONAL_ETO`, `INSTITUCIONAL_VAPOR`,
 La sesión del cliente API adjunta el JWT de `localStorage` y elimina la sesión cuando el API responde `401`; el frontend no comprueba por sí mismo la expiración antes de cada solicitud. El formulario de login aún usa una URL local fija, como se detalla en [integración y stack](../arquitectura/integracion-y-stack.md).
 
 Consulta también la [integración y stack](../arquitectura/integracion-y-stack.md) y el [contexto del producto](contexto-producto.md). Que una página exista no acredita despliegue ni validación operativa.
+
+La distribución visual por responsabilidad, permisos y estados de cada vista
+está en la [matriz de vistas y roles](../superpowers/audits/2026-11-12-matriz-vistas-roles.md).

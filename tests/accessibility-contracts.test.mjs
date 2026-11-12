@@ -44,6 +44,8 @@ test("el dashboard comercial opta explícitamente de validación de navegación 
 
   assert.doesNotMatch(comercial, /^\s*["']use client["'];/);
   assert.match(comercial, /export const instant = false/);
+  assert.doesNotMatch(comercial, /Reportes/);
+  assert.doesNotMatch(comercial, /Próximamente/);
 });
 
 test("la hidratación del layout ERP usa una snapshot externa en lugar de setState en un efecto", () => {
@@ -97,6 +99,35 @@ test("los textos de estado y usuario usan colores con contraste AA", () => {
   assert.match(emptyState, /bg-primary/);
   assert.match(emptyState, /text-primary-foreground/);
   assert.match(quality, /text-surface-subtle/);
+});
+
+test("las tablas operativas comparten el estado visual de carga y vacío", () => {
+  const tableState = read("src/components/ui/states/TableState.tsx");
+  assert.match(tableState, /role="status"/);
+  assert.match(tableState, /colSpan/);
+
+  for (const relativePath of [
+    "src/app/(erp)/planta/page.tsx",
+    "src/app/(erp)/calidad/page.tsx",
+    "src/app/(erp)/comercial/cotizaciones/CotizacionesClient.tsx",
+    "src/app/(erp)/usuarios/UsersTable.tsx",
+    "src/app/(erp)/configuracion/plantillas/PlantillasDocumentalesClient.tsx",
+  ]) {
+    const source = read(relativePath);
+    assert.match(source, /TableState/);
+  }
+});
+
+test("las vistas operativas separan error de carga de un vacío válido", () => {
+  const quality = read("src/app/(erp)/calidad/page.tsx");
+  const plant = read("src/app/(erp)/planta/page.tsx");
+  const templates = read("src/app/(erp)/configuracion/plantillas/PlantillasDocumentalesClient.tsx");
+
+  assert.match(quality, /loadError/);
+  assert.match(quality, /loadError \? null/);
+  assert.match(plant, /can\("planta\.ciclos\.crear"\)/);
+  assert.match(templates, /formatos\.crear/);
+  assert.match(templates, /formatos\.versiones\.crear/);
 });
 
 test("el diálogo expone su semántica y controla el foco por teclado", () => {

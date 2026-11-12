@@ -42,6 +42,9 @@ export default function NuevoCicloPage() {
 
   const [protocolos, setProtocolos] = useState<ProtocoloVersion[]>([]);
   const [orden, setOrden] = useState<OrdenServicio | null>(null);
+  const [cantidadesProcesadas, setCantidadesProcesadas] = useState<
+    Record<number, string>
+  >({});
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
     let active = true;
@@ -54,6 +57,16 @@ export default function NuevoCicloPage() {
         setProtocolos(p.data);
         const current = o.data.find((v) => v.id === Number(ordenId));
         setOrden(current ?? null);
+        setCantidadesProcesadas(
+          Object.fromEntries(
+            (current?.materiales ?? [])
+              .filter(
+                (material): material is typeof material & { id: number } =>
+                  typeof material.id === "number",
+              )
+              .map((material) => [material.id, ""]),
+          ),
+        );
         if (current?.metodo_esterilizacion)
           setForm((f) => ({ ...f, metodo: current.metodo_esterilizacion! }));
         setLoaded(true);
@@ -76,6 +89,15 @@ export default function NuevoCicloPage() {
       ? key !== "tiempo_secado"
       : ["temperatura", "tiempo_exposicion", "tiempo_secado"].includes(key),
   );
+  const cantidadesCompletas = Boolean(
+    orden?.materiales?.length &&
+      orden.materiales.every(
+        (material) =>
+          typeof material.id === "number" &&
+          cantidadesProcesadas[material.id] !== undefined &&
+          cantidadesProcesadas[material.id] !== "",
+      ),
+  );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -89,6 +111,10 @@ export default function NuevoCicloPage() {
     try {
       await api.post("/planta/ciclos", {
         fecha_esterilizacion: form.fecha_esterilizacion,
+        materiales_procesados: (orden?.materiales ?? []).map((material) => ({
+          material_id: material.id,
+          cantidad: Number(cantidadesProcesadas[material.id ?? -1]),
+        })),
         protocolo_version_id: protocolo?.id,
         tiempo_secado:
           form.metodo === "VAPOR" ? Number(form.tiempo_secado) : null,
@@ -216,6 +242,45 @@ export default function NuevoCicloPage() {
         ) : loaded ? (
           <p role="alert">No hay protocolo compatible disponible.</p>
         ) : null}
+        <fieldset className="space-y-3 sm:col-span-2">
+          <legend className="text-sm font-semibold text-sterinova-dark">
+            Cantidad procesada por material
+          </legend>
+          {(orden?.materiales ?? []).map((material) => (
+            <label
+              key={material.id}
+              className="grid gap-1 text-sm font-medium text-sterinova-dark sm:grid-cols-[1fr_180px]"
+            >
+              <span>
+                {material.descripcion}
+                <span className="ml-1 font-normal text-slate-500">
+                  (recibido: {material.cantidad})
+                </span>
+              </span>
+              <input
+                aria-label={`Cantidad procesada: ${material.descripcion}`}
+                required
+                type="number"
+                min={0}
+                max={material.cantidad}
+                step={1}
+                value={
+                  material.id === undefined
+                    ? ""
+                    : cantidadesProcesadas[material.id] ?? ""
+                }
+                onChange={(event) => {
+                  if (material.id === undefined) return;
+                  setCantidadesProcesadas((current) => ({
+                    ...current,
+                    [material.id!]: event.target.value,
+                  }));
+                }}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 font-normal"
+              />
+            </label>
+          ))}
+        </fieldset>
         {activeFields.map(([key, label]) => (
           <label
             key={key}
@@ -294,7 +359,11 @@ export default function NuevoCicloPage() {
           <button
             type="submit"
             disabled={
-              saving || !loaded || !protocolo || !orden?.materiales?.length
+              saving ||
+              !loaded ||
+              !protocolo ||
+              !cantidadesCompletas ||
+              !orden?.materiales?.length
             }
             className="rounded-lg bg-sterinova-orange px-4 py-2 text-sm font-semibold text-white disabled:opacity-70"
           >

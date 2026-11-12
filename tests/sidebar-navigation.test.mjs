@@ -32,6 +32,7 @@ test("muestra rutas de módulos usando permisos RBAC en vez del rol legacy", () 
   assert.ok(labels.includes("Maestros"));
   assert.ok(labels.includes("Operación"));
   assert.ok(links.some((link) => link.href === "/comercial/clientes"));
+  assert.ok(links.some((link) => link.href === "/comercial/productos"));
   assert.ok(links.some((link) => link.href === "/comercial/cotizaciones"));
   assert.ok(usersLink);
   assert.equal(usersLink.permission, "usuarios.ver");
@@ -39,6 +40,9 @@ test("muestra rutas de módulos usando permisos RBAC en vez del rol legacy", () 
   const { canAccessPath, getVisibleNavigationSections } = compiledModule.exports;
   assert.equal(canAccessPath("/usuarios", []), false);
   assert.equal(canAccessPath("/usuarios", ["Admin"]), false);
+  assert.equal(canAccessPath("/comercial/productos", []), false);
+  assert.equal(canAccessPath("/comercial/productos", ["productos.gestionar"]), true);
+  assert.equal(canAccessPath("/comercial", ["clientes.ver"]), true);
   assert.equal(canAccessPath("/logistica/ordenes", ["logistica.ordenes.ver"]), true);
   assert.equal(canAccessPath("/planta", ["planta.ordenes.ver"]), true);
   assert.equal(canAccessPath("/calidad", ["clientes.ver"]), false);
@@ -46,6 +50,12 @@ test("muestra rutas de módulos usando permisos RBAC en vez del rol legacy", () 
     getVisibleNavigationSections(["usuarios.ver"])
       .flatMap((section) => section.links)
       .some((link) => link.href === "/usuarios"),
+    true,
+  );
+  assert.equal(
+    getVisibleNavigationSections(["clientes.ver"])
+      .flatMap((section) => section.links)
+      .some((link) => link.href === "/comercial"),
     true,
   );
 });

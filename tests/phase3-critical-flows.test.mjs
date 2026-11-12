@@ -97,7 +97,7 @@ test("el rechazo de Calidad no acepta motivos vacíos ni de solo espacios", () =
   assert.equal(getRejectReasonError("Revisar parámetros"), "");
 });
 
-test("el Dashboard informa métricas en construcción sin usar datos de demo", () => {
+test("el Dashboard muestra áreas autorizadas sin métricas ficticias", () => {
   const dashboardPage = readFileSync(
     path.join(root, "src/app/(erp)/page.tsx"),
     "utf8",
@@ -108,9 +108,10 @@ test("el Dashboard informa métricas en construcción sin usar datos de demo", (
   );
 
   assert.match(dashboardPage, /export const instant = false/);
-  assert.match(dashboardClient, /EmptyState/);
-  assert.match(dashboardClient, /Métricas en construcción/);
-  assert.match(dashboardClient, /TODO:.*\/api\/metrics/);
+  assert.match(dashboardClient, /getDashboardSections/);
+  assert.match(dashboardClient, /Tus áreas de trabajo/);
+  assert.doesNotMatch(dashboardClient, /Métricas en construcción/);
+  assert.doesNotMatch(dashboardClient, /\/api\/metrics/);
   assert.doesNotMatch(dashboardClient, /Demo · Pendiente de conexión a la API/);
 });
 

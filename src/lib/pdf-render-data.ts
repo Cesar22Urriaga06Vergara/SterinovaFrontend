@@ -43,6 +43,12 @@ export function cotizacionFromPdfSnapshot(snapshot: Snapshot): Cotizacion {
     iva_version_id: quote.iva_version_id as Cotizacion['iva_version_id'],
     total: (quote.total ?? 0) as Cotizacion['total'],
     condiciones_comerciales: typeof quote.condiciones_comerciales === 'string' ? quote.condiciones_comerciales : null,
+    tiempo_despacho: typeof quote.tiempo_despacho === 'string' ? quote.tiempo_despacho : null,
+    transporte: typeof quote.transporte === 'string' ? quote.transporte : null,
+    forma_pago: typeof quote.forma_pago === 'string' ? quote.forma_pago : null,
+    validez_oferta: typeof quote.validez_oferta === 'string' ? quote.validez_oferta : null,
+    precio_incluye: typeof quote.precio_incluye === 'string' ? quote.precio_incluye : null,
+    precio_no_incluye: typeof quote.precio_no_incluye === 'string' ? quote.precio_no_incluye : null,
   };
 }
 

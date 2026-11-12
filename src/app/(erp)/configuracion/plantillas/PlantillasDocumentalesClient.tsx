@@ -3,6 +3,8 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
+import { TableState } from "@/components/ui/states/TableState";
+import { useSession } from "@/lib/session";
 
 type VersionStatus =
   | "BORRADOR"
@@ -27,6 +29,9 @@ type TemplateVersion = {
   responsable: string;
   es_vigente: boolean;
   configuracion_json: {
+    document_code?: string;
+    title?: string;
+    version_label?: string;
     paragraphs?: string[];
     commercial_terms?: string[];
     signatures?: TemplateSignature[];
@@ -34,10 +39,16 @@ type TemplateVersion = {
   };
 };
 
+type DocumentType =
+  | "COTIZACION"
+  | "CERTIFICADO"
+  | "ORDEN_SERVICIO"
+  | "ACTA_SERVICIO";
+
 type DocumentTemplate = {
   id: number;
   clave: string;
-  tipo_documento: string;
+  tipo_documento: DocumentType;
   tipo_servicio: string | null;
   codigo: string;
   nombre: string;
@@ -45,11 +56,13 @@ type DocumentTemplate = {
 };
 
 type EditorState = {
+  tipo_documento: DocumentType;
   clave: string;
   tipo_servicio: string;
   codigo: string;
   nombre: string;
   version: string;
+  version_label: string;
   fecha_version: string;
   responsable: string;
   introduccion: string;
@@ -69,17 +82,52 @@ const serviceOptions = [
 
 const today = new Date().toISOString().slice(0, 10);
 const emptyEditor = (): EditorState => ({
+  tipo_documento: "COTIZACION",
   clave: "COTIZACION_LAVANDERIA",
   tipo_servicio: "LAVANDERIA",
   codigo: "R-CM-07-5",
   nombre: "",
   version: "1",
+  version_label: "01",
   fecha_version: today,
   responsable: "",
   introduccion: "",
   condiciones_comerciales: "",
   firmas: "",
 });
+
+const documentTypeOptions: Array<[DocumentType, string]> = [
+  ["COTIZACION", "Cotización"],
+  ["CERTIFICADO", "Certificado de esterilización"],
+  ["ORDEN_SERVICIO", "Orden de servicio"],
+  ["ACTA_SERVICIO", "Acta de servicio"],
+];
+
+const typeDefaults: Record<
+  DocumentType,
+  { clave: string; codigo: string; nombre: string }
+> = {
+  COTIZACION: {
+    clave: "COTIZACION_LAVANDERIA",
+    codigo: "R-CM-07-5",
+    nombre: "LAVANDERÍA DOTACIÓN FARMACÉUTICA",
+  },
+  CERTIFICADO: {
+    clave: "CERTIFICADO_ESTERILIZACION",
+    codigo: "R-AQ-09",
+    nombre: "CERTIFICADO DE ESTERILIZACIÓN",
+  },
+  ORDEN_SERVICIO: {
+    clave: "ORDEN_SERVICIO",
+    codigo: "R-ES-02",
+    nombre: "ORDEN DE SERVICIO DE ESTERILIZACIÓN",
+  },
+  ACTA_SERVICIO: {
+    clave: "ACTA_SERVICIO",
+    codigo: "R-LG-04",
+    nombre: "ACTA DE SERVICIO",
+  },
+};
 
 function versionDate(version: TemplateVersion): string {
   return version.fecha_version?.slice(0, 10) ?? today;
@@ -104,11 +152,13 @@ function toEditor(
         .join("\n")
     : "";
   return {
+    tipo_documento: format.tipo_documento,
     clave: format.clave,
     tipo_servicio: format.tipo_servicio ?? "LAVANDERIA",
-    codigo: format.codigo,
-    nombre: format.nombre,
+    codigo: String(config.document_code ?? format.codigo),
+    nombre: String(config.title ?? format.nombre),
     version: String(version.version),
+    version_label: String(config.version_label ?? String(version.version).padStart(2, "0")),
     fecha_version: versionDate(version),
     responsable: version.responsable,
     introduccion: config.paragraphs?.join("\n") ?? "",
@@ -153,6 +203,12 @@ function stateLabel(state: VersionStatus): string {
 }
 
 export default function PlantillasDocumentalesClient() {
+  const { can } = useSession();
+  const canCreateTemplate = can("formatos.crear");
+  const canCreateVersion = can("formatos.versiones.crear");
+  const canEditVersion = can("formatos.versiones.editar");
+  const canPublishVersion = can("formatos.versiones.publicar");
+  const canDeleteTemplate = can("formatos.eliminar");
   const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -190,7 +246,6 @@ export default function PlantillasDocumentalesClient() {
   const orderedTemplates = useMemo(
     () =>
       templates
-        .filter((template) => template.tipo_documento === "COTIZACION")
         .sort((a, b) => a.codigo.localeCompare(b.codigo)),
     [templates],
   );
@@ -216,6 +271,19 @@ export default function PlantillasDocumentalesClient() {
     setEditor((current) => ({ ...current, [key]: value }));
   }
 
+  function selectDocumentType(tipo_documento: DocumentType) {
+    const defaults = typeDefaults[tipo_documento];
+    setEditor((current) => ({
+      ...current,
+      tipo_documento,
+      tipo_servicio:
+        tipo_documento === "COTIZACION"
+          ? current.tipo_servicio || "LAVANDERIA"
+          : "",
+      ...defaults,
+    }));
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
@@ -223,6 +291,7 @@ export default function PlantillasDocumentalesClient() {
     const payload = {
       codigo: editor.codigo.trim(),
       nombre: editor.nombre.trim(),
+      version_label: editor.version_label.trim(),
       fecha_version: editor.fecha_version,
       responsable: editor.responsable.trim(),
       introduccion: editor.introduccion,
@@ -240,8 +309,11 @@ export default function PlantillasDocumentalesClient() {
         await api.post("/formatos-documentales", {
           ...payload,
           clave: editor.clave,
-          tipo_documento: "COTIZACION",
-          tipo_servicio: editor.tipo_servicio,
+          tipo_documento: editor.tipo_documento,
+          tipo_servicio:
+            editor.tipo_documento === "COTIZACION"
+              ? editor.tipo_servicio
+              : null,
           version: Number(editor.version),
         });
       }
@@ -314,14 +386,16 @@ export default function PlantillasDocumentalesClient() {
             Administre versiones, textos y publicación de formatos.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={startCreate}
-          className="inline-flex items-center gap-2 rounded-lg bg-sterinova-orange px-4 py-2.5 text-sm font-semibold text-white"
-        >
-          <Plus className="h-4 w-4" aria-hidden />
-          Nueva plantilla
-        </button>
+        {canCreateTemplate ? (
+          <button
+            type="button"
+            onClick={startCreate}
+            className="inline-flex items-center gap-2 rounded-lg bg-sterinova-orange px-4 py-2.5 text-sm font-semibold text-white"
+          >
+            <Plus className="h-4 w-4" aria-hidden />
+            Nueva plantilla
+          </button>
+        ) : null}
       </header>
 
       {error ? (
@@ -332,11 +406,11 @@ export default function PlantillasDocumentalesClient() {
 
       <section className="space-y-4">
         {loading ? (
-          <p className="text-sterinova-teal">Cargando plantillas...</p>
+          <TableState colSpan={1} message="Cargando plantillas..." loading mode="panel" />
         ) : orderedTemplates.length === 0 ? (
-          <p className="rounded-xl bg-white p-6 text-sterinova-teal">
-            No hay plantillas documentales registradas.
-          </p>
+          <div className="rounded-xl bg-white p-6">
+            <p className="text-surface-subtle">No hay plantillas documentales registradas.</p>
+          </div>
         ) : (
           orderedTemplates.map((format) => (
             <article
@@ -353,22 +427,26 @@ export default function PlantillasDocumentalesClient() {
                   </h2>
                 </div>
                 <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void addVersion(format)}
-                    className="inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-sm text-sterinova-dark"
-                  >
-                    <Plus className="h-4 w-4" aria-hidden />
-                    Nueva versión
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void deleteTemplate(format)}
-                    aria-label={`Eliminar ${format.codigo}`}
-                    className="rounded-lg border px-3 py-2 text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" aria-hidden />
-                  </button>
+                  {canCreateVersion ? (
+                    <button
+                      type="button"
+                      onClick={() => void addVersion(format)}
+                      className="inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-sm text-sterinova-dark"
+                    >
+                      <Plus className="h-4 w-4" aria-hidden />
+                      Nueva versión
+                    </button>
+                  ) : null}
+                  {canDeleteTemplate ? (
+                    <button
+                      type="button"
+                      onClick={() => void deleteTemplate(format)}
+                      aria-label={`Eliminar ${format.codigo}`}
+                      className="rounded-lg border px-3 py-2 text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden />
+                    </button>
+                  ) : null}
                 </div>
               </div>
               <div className="mt-4 divide-y divide-sterinova-dark/10">
@@ -381,7 +459,8 @@ export default function PlantillasDocumentalesClient() {
                     >
                       <div className="flex flex-wrap items-center gap-3 text-sm">
                         <strong className="text-sterinova-dark">
-                          Versión {String(version.version).padStart(2, "0")}
+                          {String(version.configuracion_json.document_code ?? format.codigo)} · V
+                          {String(version.configuracion_json.version_label ?? String(version.version).padStart(2, "0"))}
                         </strong>
                         <span className="rounded-full bg-sterinova-light px-2.5 py-1 text-xs font-semibold text-sterinova-dark">
                           {stateLabel(version.estado)}
@@ -392,7 +471,7 @@ export default function PlantillasDocumentalesClient() {
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {version.estado === "BORRADOR" ? (
+                        {version.estado === "BORRADOR" && canEditVersion ? (
                           <button
                             type="button"
                             onClick={() => startEdit(format, version)}
@@ -402,7 +481,7 @@ export default function PlantillasDocumentalesClient() {
                             Editar
                           </button>
                         ) : null}
-                        {availableTransitions(version.estado).map((next) => (
+                        {canPublishVersion && availableTransitions(version.estado).map((next) => (
                           <button
                             key={next}
                             type="button"
@@ -434,23 +513,44 @@ export default function PlantillasDocumentalesClient() {
             {!editing ? (
               <>
                 <label className="text-sm">
-                  <span className="mb-1 block font-medium">Servicio</span>
+                  <span className="mb-1 block font-medium">Tipo de documento</span>
                   <select
-                    value={editor.tipo_servicio}
+                    value={editor.tipo_documento}
                     onChange={(event) => {
-                      const tipo = event.target.value;
-                      updateEditor("tipo_servicio", tipo);
-                      updateEditor("clave", `COTIZACION_${tipo}`);
+                      const selected = documentTypeOptions.find(
+                        ([value]) => value === event.target.value,
+                      )?.[0];
+                      if (selected) selectDocumentType(selected);
                     }}
                     className="w-full rounded-lg border px-3 py-2"
                   >
-                    {serviceOptions.map(([value, label]) => (
+                    {documentTypeOptions.map(([value, label]) => (
                       <option key={value} value={value}>
                         {label}
                       </option>
                     ))}
                   </select>
                 </label>
+                {editor.tipo_documento === "COTIZACION" ? (
+                  <label className="text-sm">
+                    <span className="mb-1 block font-medium">Servicio</span>
+                    <select
+                      value={editor.tipo_servicio}
+                      onChange={(event) => {
+                        const tipo = event.target.value;
+                        updateEditor("tipo_servicio", tipo);
+                        updateEditor("clave", `COTIZACION_${tipo}`);
+                      }}
+                      className="w-full rounded-lg border px-3 py-2"
+                    >
+                      {serviceOptions.map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
                 <label className="text-sm">
                   <span className="mb-1 block font-medium">Clave</span>
                   <input
@@ -497,6 +597,18 @@ export default function PlantillasDocumentalesClient() {
                 />
               </label>
             ) : null}
+            <label className="text-sm">
+              <span className="mb-1 block font-medium">Etiqueta de versión impresa</span>
+              <input
+                required
+                value={editor.version_label}
+                onChange={(event) =>
+                  updateEditor("version_label", event.target.value)
+                }
+                className="w-full rounded-lg border px-3 py-2"
+                placeholder="04 o 04.1"
+              />
+            </label>
             <label className="text-sm">
               <span className="mb-1 block font-medium">Fecha de versión</span>
               <input

@@ -5,12 +5,20 @@ export const navigationSections = [
   },
   {
     title: "Maestros",
-    links: [{ href: "/comercial/clientes", label: "Clientes", icon: "users", permission: "clientes.ver" }],
+    links: [
+      { href: "/comercial/clientes", label: "Clientes", icon: "users", permission: "clientes.ver" },
+      { href: "/comercial/productos", label: "Catálogo", icon: "package", permission: "productos.gestionar" },
+    ],
   },
   {
     title: "Operación",
     links: [
-      { href: "/comercial", label: "Panel Comercial", icon: "briefcase", permission: "cotizaciones.ver" },
+      {
+        href: "/comercial",
+        label: "Panel Comercial",
+        icon: "briefcase",
+        permissions: ["clientes.ver", "productos.gestionar", "cotizaciones.ver"],
+      },
       { href: "/comercial/cotizaciones", label: "Cotizaciones", icon: "fileText", permission: "cotizaciones.ver" },
       { href: "/logistica", label: "Logística", icon: "truck", permission: "logistica.ordenes.ver" },
       { href: "/planta", label: "Planta", icon: "factory", permission: "planta.ordenes.ver" },
@@ -30,6 +38,15 @@ export const navigationSections = [
 
 export type NavigationIcon = (typeof navigationSections)[number]["links"][number]["icon"];
 
+function hasRequiredPermission(
+  permissions: readonly string[],
+  required: string | readonly string[],
+): boolean {
+  return typeof required === "string"
+    ? permissions.includes(required)
+    : required.some((permission) => permissions.includes(permission));
+}
+
 export function getHomePath(permissions: readonly string[] = []): string {
  if (permissions.includes('usuarios.identidad.gestionar')) return '/';
  return ['/comercial','/logistica','/planta','/calidad','/'].find(path => canAccessPath(path, permissions)) ?? '/';
@@ -37,10 +54,11 @@ export function getHomePath(permissions: readonly string[] = []): string {
 
 export function canAccessPath(pathname: string, permissions: readonly string[] = []): boolean {
   if (pathname === "/") return true;
-  const pathPermissions: readonly [string, string][] = [
+  const pathPermissions: readonly [string, string | readonly string[]][] = [
     ["/comercial/clientes", "clientes.ver"],
+    ["/comercial/productos", "productos.gestionar"],
     ["/comercial/cotizaciones", "cotizaciones.ver"],
-    ["/comercial", "cotizaciones.ver"],
+    ["/comercial", ["clientes.ver", "productos.gestionar", "cotizaciones.ver"]],
     ["/logistica", "logistica.ordenes.ver"],
     ["/planta", "planta.ordenes.ver"],
     ["/calidad", "calidad.ciclos.ver"],
@@ -52,15 +70,17 @@ export function canAccessPath(pathname: string, permissions: readonly string[] =
   const match = [...pathPermissions]
     .sort(([first], [second]) => second.length - first.length)
     .find(([prefix]) => pathname === prefix || pathname.startsWith(`${prefix}/`));
-  return match ? permissions.includes(match[1]) : false;
+  return match ? hasRequiredPermission(permissions, match[1]) : false;
 }
 
 export function getVisibleNavigationSections(permissions: readonly string[]) {
   return navigationSections.map((section) => ({
     ...section,
-    links: section.links.filter((link) => "permission" in link
-      ? permissions.includes(link.permission)
-      : true),
+    links: section.links.filter((link) => {
+      if ("permission" in link) return permissions.includes(link.permission);
+      if ("permissions" in link) return hasRequiredPermission(permissions, link.permissions);
+      return true;
+    }),
   })).filter((section) => section.links.length > 0);
 }
 

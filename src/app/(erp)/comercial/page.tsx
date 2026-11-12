@@ -1,4 +1,4 @@
-import { BarChart3, Building2, FileText } from "lucide-react";
+import { Building2, FileText } from "lucide-react";
 import Link from "next/link";
 
 export const instant = false;
@@ -30,7 +30,7 @@ export default function ComercialPage() {
         </p>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-3">
+      <div className="grid gap-5 md:grid-cols-2">
         {links.map(({ href, title, description, icon: Icon }) => (
           <Link
             key={href}
@@ -44,16 +44,6 @@ export default function ComercialPage() {
             <p className="mt-1 text-sm text-sterinova-teal">{description}</p>
           </Link>
         ))}
-        <div
-          aria-disabled="true"
-          className="flex min-h-56 flex-col rounded-xl bg-sterinova-light p-7 opacity-75 ring-1 ring-sterinova-dark/10"
-        >
-          <BarChart3 className="h-8 w-8 text-sterinova-teal" aria-hidden />
-          <h2 className="mt-5 text-xl font-semibold text-sterinova-dark">
-            Reportes
-          </h2>
-          <p className="mt-1 text-sm text-sterinova-teal">Próximamente</p>
-        </div>
       </div>
     </div>
   );

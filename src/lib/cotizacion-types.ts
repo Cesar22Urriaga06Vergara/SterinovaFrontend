@@ -1,5 +1,9 @@
 import type { FrozenSeal } from './operational-types';
 import type { ClienteDatosDocumento } from "./cliente-types";
+import type {
+  CategoriaProducto,
+  TipoItemCatalogo,
+} from "./producto-types";
 
 export type { Cliente } from "./cliente-types";
 
@@ -40,7 +44,22 @@ export const TIPOS_SERVICIO: {
 
 export type CotizacionItem = {
   id?: number;
+  producto_id?: number | null;
+  tipo_item?: TipoItemCatalogo | null;
+  categoria?: CategoriaProducto | null;
+  codigo?: string | null;
+  referencia?: string | null;
+  metodo?: string | null;
+  presentacion?: string | null;
+  marca?: string | null;
   descripcion: string;
+  unidad?: string | null;
+  precision_cantidad?: number | null;
+  imagen_key?: string | null;
+  imagen_sha256?: string | null;
+  imagen_mime_type?: string | null;
+  imagen_tamano_bytes?: number | null;
+  imagen_src?: string | null;
   cantidad: number;
   valor_unitario: number;
   valor_total: number;
@@ -54,6 +73,8 @@ export type Cotizacion = {
   fecha: string;
   tipo_servicio: TipoServicioCotizacion;
   estado: string;
+  aprobador_interno_id?: number | null;
+  aprobado_internamente_at?: string | null;
   fecha_emision?: string | null;
   pdf_url?: string | null;
   hash_pdf?: string | null;
@@ -63,6 +84,12 @@ export type Cotizacion = {
   iva_version_id?: number | null;
   total: string | number;
   condiciones_comerciales?: string | null;
+  tiempo_despacho?: string | null;
+  transporte?: string | null;
+  forma_pago?: string | null;
+  validez_oferta?: string | null;
+  precio_incluye?: string | null;
+  precio_no_incluye?: string | null;
   cliente_id: number;
   creador_id?: number | null;
   creador?: {
@@ -96,4 +123,14 @@ export function formatCurrency(value: string | number): string {
 
 export function isEditableDraft(quote: Cotizacion): boolean {
   return quote.estado?.toUpperCase() === "BORRADOR" && !quote.fecha_emision;
+}
+
+export function isInternallyApproved(quote: Cotizacion): boolean {
+  return (
+    quote.estado?.toUpperCase() === "APROBADA" &&
+    quote.creador_id != null &&
+    quote.aprobador_interno_id != null &&
+    quote.aprobado_internamente_at != null &&
+    quote.aprobador_interno_id !== quote.creador_id
+  );
 }

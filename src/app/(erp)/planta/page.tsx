@@ -5,10 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { ESTADO_COLORES, ESTADO_LABELS, OrdenServicio } from "@/lib/logistica-types";
 import { CicloEsterilizacion } from "@/lib/planta-types";
+import { TableState } from "@/components/ui/states/TableState";
+import { useSession } from "@/lib/session";
 
 export default function PlantaPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { can } = useSession();
+  const canCreateCycle = can("planta.ciclos.crear");
   const [ordenes, setOrdenes] = useState<OrdenServicio[]>([]);
   const [ciclos, setCiclos] = useState<CicloEsterilizacion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,17 +81,9 @@ export default function PlantaPage() {
             </thead>
             <tbody className="divide-y divide-sterinova-dark/5">
               {loading ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-sterinova-teal">
-                    Cargando...
-                  </td>
-                </tr>
+                <TableState colSpan={5} message="Cargando órdenes de planta..." loading />
               ) : ordenes.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-sterinova-teal">
-                    No hay órdenes listas para procesar.
-                  </td>
-                </tr>
+                <TableState colSpan={5} message="No hay órdenes listas para procesar." />
               ) : (
                 ordenes.map((orden) => (
                   <tr key={orden.id} className="text-sterinova-dark">
@@ -102,15 +98,19 @@ export default function PlantaPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          router.push(`/planta/ciclo/nuevo?orden_id=${orden.id}`)
-                        }
-                        className="rounded-lg bg-sterinova-orange px-3 py-2 text-xs font-semibold text-white hover:brightness-110"
-                      >
-                        Registrar Ciclo
-                      </button>
+                      {canCreateCycle ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            router.push(`/planta/ciclo/nuevo?orden_id=${orden.id}`)
+                          }
+                          className="rounded-lg bg-sterinova-orange px-3 py-2 text-xs font-semibold text-white hover:brightness-110"
+                        >
+                          Registrar Ciclo
+                        </button>
+                      ) : (
+                        <span className="text-sm text-surface-subtle">Solo consulta</span>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -138,17 +138,9 @@ export default function PlantaPage() {
             </thead>
             <tbody className="divide-y divide-sterinova-dark/5">
               {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sterinova-teal">
-                    Cargando...
-                  </td>
-                </tr>
+                <TableState colSpan={6} message="Cargando historial de ciclos..." loading />
               ) : ciclos.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sterinova-teal">
-                    Aún no hay ciclos registrados.
-                  </td>
-                </tr>
+                <TableState colSpan={6} message="Aún no hay ciclos registrados." />
               ) : (
                 ciclos.map((ciclo) => (
                   <tr key={ciclo.id} className="text-sterinova-dark">

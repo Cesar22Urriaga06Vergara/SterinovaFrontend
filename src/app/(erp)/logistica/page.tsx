@@ -3,6 +3,11 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Plus, X } from "lucide-react";
 import { MaterialesEditor } from "@/components/logistica/MaterialesEditor";
+import {
+  RegistroEventoOrdenModal,
+  type EstadoEventoOrden,
+  type EventoOrdenInput,
+} from "@/components/logistica/RegistroEventoOrdenModal";
 import { nuevoMaterial, validarMateriales } from "@/lib/operational-forms";
 import type { MaterialRecibido } from "@/lib/operational-types";
 import { api, downloadPdfFromBackend } from "@/lib/api";
@@ -17,6 +22,16 @@ import {
   OrdenServicio,
   nextEstadoAction,
 } from "@/lib/logistica-types";
+
+function isEstadoEventoOrden(
+  estado: string,
+): estado is EstadoEventoOrden {
+  return (
+    estado === "RECOGIDO" ||
+    estado === "EN_PLANTA" ||
+    estado === "ENTREGADO"
+  );
+}
 
 export default function LogisticaPage() {
   const [materiales, setMateriales] = useState<MaterialRecibido[]>([
@@ -40,6 +55,11 @@ export default function LogisticaPage() {
     url: string;
     title: string;
   } | null>(null);
+  const [eventoPendiente, setEventoPendiente] = useState<{
+    orden: OrdenServicio;
+    estado: EstadoEventoOrden;
+  } | null>(null);
+  const [savingEvent, setSavingEvent] = useState(false);
 
   const loadData = useCallback(async () => {
     const [ordenesRes, aprobadasRes] = await Promise.all([
@@ -139,6 +159,13 @@ export default function LogisticaPage() {
   async function handleEstado(orden: OrdenServicio) {
     const action = nextEstadoAction(orden.estado);
     if (!action) return;
+    if (isEstadoEventoOrden(action.next)) {
+      setEventoPendiente({
+        orden,
+        estado: action.next,
+      });
+      return;
+    }
     setError("");
     try {
       await api.put(`/logistica/ordenes/${orden.id}/estado`, {
@@ -147,6 +174,31 @@ export default function LogisticaPage() {
       await refreshData();
     } catch {
       setError(`No se pudo actualizar el estado de ${orden.consecutivo}.`);
+    }
+  }
+
+  async function handleEvento(evento: EventoOrdenInput) {
+    if (!eventoPendiente) return;
+    setSavingEvent(true);
+    setError("");
+    try {
+      await api.put(
+        `/logistica/ordenes/${eventoPendiente.orden.id}/estado`,
+        { estado: eventoPendiente.estado, evento },
+      );
+      setEventoPendiente(null);
+      await refreshData();
+    } catch (cause) {
+      const message = (
+        cause as { response?: { data?: { message?: string | string[] } } }
+      ).response?.data?.message;
+      setError(
+        Array.isArray(message)
+          ? message.join(". ")
+          : message || "No se pudo registrar el evento logístico.",
+      );
+    } finally {
+      setSavingEvent(false);
     }
   }
 
@@ -159,7 +211,7 @@ export default function LogisticaPage() {
       );
       setPdfPreview({
         url: URL.createObjectURL(data),
-        title: `${orden.consecutivo} - ${tipo === "acta" ? "Acta" : "Orden"}`,
+        title: `${tipo === "acta" ? orden.acta_consecutivo ?? orden.consecutivo : orden.consecutivo} - ${tipo === "acta" ? "Acta" : "Orden"}`,
       });
     } catch {
       setError(`No se pudo previsualizar el documento ${orden.consecutivo}.`);
@@ -171,7 +223,7 @@ export default function LogisticaPage() {
     try {
       await downloadPdfFromBackend(
         `/logistica/ordenes/${orden.id}/pdf?tipo=${tipo}`,
-        `${orden.consecutivo}-${tipo === "acta" ? "acta" : "orden"}.pdf`,
+        `${tipo === "acta" ? orden.acta_consecutivo ?? orden.consecutivo : orden.consecutivo}-${tipo === "acta" ? "acta" : "orden"}.pdf`,
       );
     } catch {
       setError(`No se pudo generar el documento ${orden.consecutivo}.`);
@@ -215,6 +267,7 @@ export default function LogisticaPage() {
           <thead className="bg-sterinova-light text-sterinova-dark">
             <tr>
               <th className="px-4 py-3 font-semibold">Consecutivo OS</th>
+              <th className="px-4 py-3 font-semibold">Consecutivo Acta</th>
               <th className="px-4 py-3 font-semibold">Cliente</th>
               <th className="px-4 py-3 font-semibold">Cotización</th>
               <th className="px-4 py-3 font-semibold">Fecha Programada</th>
@@ -227,7 +280,7 @@ export default function LogisticaPage() {
             {loading ? (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={8}
                   className="px-4 py-8 text-center text-sterinova-teal"
                 >
                   Cargando...
@@ -236,7 +289,7 @@ export default function LogisticaPage() {
             ) : ordenes.length === 0 ? (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={8}
                   className="px-4 py-8 text-center text-sterinova-teal"
                 >
                   No hay órdenes de servicio. Aprueba una cotización y genera
@@ -250,6 +303,9 @@ export default function LogisticaPage() {
                   <tr key={orden.id} className="text-sterinova-dark">
                     <td className="px-4 py-3 font-medium">
                       {orden.consecutivo}
+                    </td>
+                    <td className="px-4 py-3 font-medium">
+                      {orden.acta_consecutivo ?? "—"}
                     </td>
                     <td className="px-4 py-3">
                       {orden.cotizacion?.cliente?.razon_social ?? "-"}
@@ -274,7 +330,8 @@ export default function LogisticaPage() {
                       {orden.conductor_asignado ?? "Sin asignar"}
                     </td>
                     <td className="space-y-2 px-4 py-3">
-                      {!["PROCESADO", "CANCELADO"].includes(orden.estado) ? (
+                      {!["PROCESADO", "ENTREGADO", "CANCELADO"].includes(orden.estado) &&
+                      !orden.eventos?.length ? (
                         <button
                           type="button"
                           onClick={() => {
@@ -365,6 +422,18 @@ export default function LogisticaPage() {
             className="mx-auto h-full w-full max-w-6xl rounded-b-xl bg-white"
           />
         </div>
+      ) : null}
+
+      {eventoPendiente ? (
+        <RegistroEventoOrdenModal
+          orden={eventoPendiente.orden}
+          estado={eventoPendiente.estado}
+          saving={savingEvent}
+          onClose={() => {
+            if (!savingEvent) setEventoPendiente(null);
+          }}
+          onSubmit={(evento) => void handleEvento(evento)}
+        />
       ) : null}
 
       {modalOpen ? (

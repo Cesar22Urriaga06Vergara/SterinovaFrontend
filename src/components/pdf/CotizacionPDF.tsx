@@ -1,7 +1,7 @@
 "use client";
 import { ivaLabel } from "@/lib/iva";
 
-import { forwardRef, type CSSProperties } from "react";
+import { Fragment, forwardRef, type CSSProperties } from "react";
 import Image from "next/image";
 import { Cotizacion, formatearMoneda } from "@/lib/cotizacion-types";
 import { getCotizacionPdfContent } from "@/lib/cotizacion-pdf-content";
@@ -101,13 +101,13 @@ const clientFields = [
 ] as const;
 
 const commercialTerms = [
-  "TIEMPO DE DESPACHO",
-  "TRANSPORTE",
-  "FORMA DE PAGO",
-  "VALIDEZ DE LA OFERTA",
-  "EL PRECIO INCLUYE",
-  "EL PRECIO NO INCLUYE",
-];
+  ["TIEMPO DE DESPACHO", (data: Cotizacion) => data.tiempo_despacho],
+  ["TRANSPORTE", (data: Cotizacion) => data.transporte],
+  ["FORMA DE PAGO", (data: Cotizacion) => data.forma_pago],
+  ["VALIDEZ DE LA OFERTA", (data: Cotizacion) => data.validez_oferta],
+  ["EL PRECIO INCLUYE", (data: Cotizacion) => data.precio_incluye],
+  ["EL PRECIO NO INCLUYE", (data: Cotizacion) => data.precio_no_incluye],
+] as const;
 
 function valueOrBlank(value: string | null | undefined) {
   return value?.trim() || "";
@@ -133,6 +133,80 @@ export const CotizacionPDF = forwardRef<HTMLDivElement, Props>(
     const documentStyle = {
       padding: `${template.topPadding} ${template.horizontalPadding} ${template.bottomPadding}`,
     } satisfies CSSProperties;
+    const insumosGroups = data.tipo_servicio === "INSUMOS"
+      ? (["EMPAQUES", "MONITOREO", "EQUIPOS"] as const)
+          .map((category) => ({
+            category,
+            items: (data.items ?? []).filter(
+              (item) => (item.categoria ?? "EMPAQUES") === category,
+            ),
+          }))
+          .filter((group) => group.items.length > 0)
+      : [];
+
+    function renderItemRow(item: NonNullable<Cotizacion["items"]>[number], index: number) {
+      return (
+        <tr
+          key={item.id ?? `${item.descripcion}-${index}`}
+          className="break-inside-avoid"
+        >
+          <td
+            className="whitespace-pre-line break-words border px-[2mm] py-[1.1mm]"
+            style={{ borderColor: template.border }}
+          >
+            {data.tipo_servicio === "INSUMOS" ? (
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  {item.codigo || item.referencia ? (
+                    <p className="font-semibold">
+                      {[item.codigo, item.referencia].filter(Boolean).join(" · ")}
+                    </p>
+                  ) : null}
+                  <p>{item.descripcion}</p>
+                  {[item.metodo, item.presentacion, item.marca]
+                    .filter(Boolean)
+                    .length > 0 ? (
+                    <p className="mt-1 text-[7pt] text-gray-600">
+                      {[item.metodo, item.presentacion, item.marca]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  ) : null}
+                </div>
+                {item.imagen_src ? (
+                  <Image
+                    src={item.imagen_src}
+                    alt={`Imagen de ${item.descripcion}`}
+                    width={100}
+                    height={70}
+                    unoptimized
+                    className="h-[18mm] w-[24mm] shrink-0 object-contain"
+                  />
+                ) : null}
+              </div>
+            ) : item.descripcion}
+          </td>
+          <td
+            className="border px-[1.5mm] py-[1.1mm] text-center"
+            style={{ borderColor: template.border }}
+          >
+            {item.cantidad}{data.tipo_servicio === "INSUMOS" && item.unidad ? ` ${item.unidad}` : ""}
+          </td>
+          <td
+            className="border px-[1.5mm] py-[1.1mm] text-right"
+            style={{ borderColor: template.border }}
+          >
+            {formatearMoneda(item.valor_unitario)}
+          </td>
+          <td
+            className="border px-[1.5mm] py-[1.1mm] text-right"
+            style={{ borderColor: template.border }}
+          >
+            {formatearMoneda(item.valor_total)}
+          </td>
+        </tr>
+      );
+    }
 
     return (
       <article
@@ -278,14 +352,6 @@ export const CotizacionPDF = forwardRef<HTMLDivElement, Props>(
           >
             DETALLE DE COTIZACIÓN:
           </h2>
-          {data.tipo_servicio === "INSUMOS" ? (
-            <h3
-              className="mb-[1.5mm] text-[8pt] font-bold"
-              style={{ color: template.secondary }}
-            >
-              EMPAQUES PARA ESTERILIZACIÓN:
-            </h3>
-          ) : null}
           <table className="w-full table-fixed border-collapse text-[8pt]">
             <thead className="table-header-group">
               <tr className="text-white">
@@ -330,37 +396,28 @@ export const CotizacionPDF = forwardRef<HTMLDivElement, Props>(
               </tr>
             </thead>
             <tbody>
-              {data.items?.map((item, index) => (
-                <tr
-                  key={item.id ?? `${item.descripcion}-${index}`}
-                  className="break-inside-avoid"
-                >
-                  <td
-                    className="whitespace-pre-line break-words border px-[2mm] py-[1.1mm]"
-                    style={{ borderColor: template.border }}
-                  >
-                    {item.descripcion}
-                  </td>
-                  <td
-                    className="border px-[1.5mm] py-[1.1mm] text-center"
-                    style={{ borderColor: template.border }}
-                  >
-                    {item.cantidad}
-                  </td>
-                  <td
-                    className="border px-[1.5mm] py-[1.1mm] text-right"
-                    style={{ borderColor: template.border }}
-                  >
-                    {formatearMoneda(item.valor_unitario)}
-                  </td>
-                  <td
-                    className="border px-[1.5mm] py-[1.1mm] text-right"
-                    style={{ borderColor: template.border }}
-                  >
-                    {formatearMoneda(item.valor_total)}
-                  </td>
-                </tr>
-              ))}
+              {data.tipo_servicio === "INSUMOS"
+                ? insumosGroups.map((group) => (
+                    <Fragment key={group.category}>
+                      <tr className="break-inside-avoid">
+                        <th
+                          colSpan={4}
+                          className="border px-[2mm] py-[1.2mm] text-left font-bold"
+                          style={{
+                            backgroundColor: template.light,
+                            borderColor: template.border,
+                            color: template.secondary,
+                          }}
+                        >
+                          {group.category === "EMPAQUES"
+                            ? "EMPAQUES PARA ESTERILIZACIÓN"
+                            : group.category}
+                        </th>
+                      </tr>
+                      {group.items.map((item, index) => renderItemRow(item, index))}
+                    </Fragment>
+                  ))
+                : data.items?.map((item, index) => renderItemRow(item, index))}
               {!data.items?.length ? (
                 <tr>
                   <td
@@ -416,7 +473,7 @@ export const CotizacionPDF = forwardRef<HTMLDivElement, Props>(
             </h2>
             <table className="w-full table-fixed border-collapse text-[7.5pt]">
               <tbody>
-                {commercialTerms.map((term) => (
+                {commercialTerms.map(([term, getValue]) => (
                   <tr key={term} className="break-inside-avoid">
                     <th
                       scope="row"
@@ -430,9 +487,11 @@ export const CotizacionPDF = forwardRef<HTMLDivElement, Props>(
                       {term}
                     </th>
                     <td
-                      className="border px-[2mm] py-[0.8mm]"
+                      className="whitespace-pre-line break-words border px-[2mm] py-[0.8mm]"
                       style={{ borderColor: template.border }}
-                    />
+                    >
+                      {getValue(data)?.trim() ?? ""}
+                    </td>
                   </tr>
                 ))}
                 {data.condiciones_comerciales?.trim() ? (

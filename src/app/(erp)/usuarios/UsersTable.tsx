@@ -2,6 +2,7 @@ import { KeyRound, Pencil, ShieldCheck, UserRoundX, Users } from "lucide-react";
 import type { UserRecord } from "./types";
 import { userFullName } from "./types";
 import type { RoleAssignment } from "./UserRolesDialog";
+import { TableState } from "@/components/ui/states/TableState";
 
 export function UsersTable({
   users,
@@ -48,9 +49,9 @@ export function UsersTable({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {loading ? (
-              <tr><td colSpan={5} className="px-5 py-10 text-center text-slate-500">Cargando usuarios…</td></tr>
+              <TableState colSpan={5} message="Cargando usuarios..." loading />
             ) : users.length === 0 ? (
-              <tr><td colSpan={5} className="px-5 py-10 text-center text-slate-500">No hay usuarios registrados.</td></tr>
+              <TableState colSpan={5} message="No hay usuarios registrados." />
             ) : users.map((user) => {
               const isSelf = user.id === sessionUserId;
               return (
