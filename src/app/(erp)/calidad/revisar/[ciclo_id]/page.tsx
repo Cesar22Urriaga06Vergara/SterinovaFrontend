@@ -32,10 +32,11 @@ function errorMessage(error: unknown, fallback: string) {
 }
 
 export default function RevisarCicloPage() {
-  const { can } = useSession();
+  const { can, user } = useSession();
   const canApprove = can("calidad.aprobar");
   const canReject = can("calidad.rechazar");
   const canDownload = can("certificados.descargar");
+  const userId = user?.id;
   const params = useParams<{ ciclo_id: string }>();
   const router = useRouter();
   const cicloId = Number(params.ciclo_id);
@@ -336,7 +337,7 @@ export default function RevisarCicloPage() {
           />
           {!issuedCertificate ? (
             <div className="flex flex-wrap justify-end gap-3">
-              {canReject ? <button
+              {canReject && ciclo && userId !== ciclo.operador_id ? <button
                 type="button"
                 onClick={() => {
                   setError("");
@@ -346,9 +347,10 @@ export default function RevisarCicloPage() {
               >
                 <X className="h-4 w-4" aria-hidden /> Rechazar
               </button> : null}
-              {canApprove ? <button
+              {canApprove && ciclo && userId !== ciclo.operador_id ? <button
                 type="button"
                 disabled={
+                  userId === ciclo.operador_id ||
                   !evaluacionesParaAprobar(
                     ciclo.protocolo_version ?? undefined,
                     selecciones,

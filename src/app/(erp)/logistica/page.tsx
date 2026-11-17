@@ -13,7 +13,6 @@ import type { MaterialRecibido } from "@/lib/operational-types";
 import { api, downloadPdfFromBackend } from "@/lib/api";
 import {
   Cotizacion,
-  formatCurrency,
   labelTipoServicio,
 } from "@/lib/cotizacion-types";
 import {
@@ -515,8 +514,7 @@ export default function LogisticaPage() {
                         <option key={cotizacion.id} value={cotizacion.id}>
                           {cotizacion.consecutivo} —{" "}
                           {cotizacion.cliente?.razon_social ?? "Cliente"} —{" "}
-                          {labelTipoServicio(cotizacion.tipo_servicio)} —{" "}
-                          {formatCurrency(cotizacion.total)}
+                          {labelTipoServicio(cotizacion.tipo_servicio)}
                         </option>
                       ))}
                     </select>

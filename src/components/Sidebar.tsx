@@ -5,12 +5,15 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   BadgeCheck,
+  BarChart3,
   CheckCircle,
+  DollarSign,
   Factory,
   FileText,
   Home,
   Package,
   Settings,
+  Shield,
   Truck,
   Users,
   type LucideIcon,
@@ -33,6 +36,9 @@ const icons: Record<NavigationIcon, LucideIcon> = {
   users: Users,
   badgeCheck: BadgeCheck,
   package: Package,
+  barChart3: BarChart3,
+  shield: Shield,
+  dollarSign: DollarSign,
 };
 
 type SidebarProps = {

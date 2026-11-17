@@ -113,6 +113,24 @@ export default function CotizacionesPage() {
     }
   }
 
+  async function handleEnviar(cotizacion: Cotizacion) {
+    if (!can("cotizaciones.enviar")) return;
+    setEmittingId(cotizacion.id);
+    setError("");
+    setSuccess("");
+    try {
+      const { data } = await api.post<Cotizacion>(
+        `/cotizaciones/${cotizacion.id}/enviar`, undefined, { headers },
+      );
+      setSuccess(`Cotización ${data.consecutivo} enviada exitosamente.`);
+      await loadCotizaciones();
+    } catch {
+      setError(`No se pudo enviar ${cotizacion.consecutivo}.`);
+    } finally {
+      setEmittingId(null);
+    }
+  }
+
   async function handlePreview(cotizacion: Cotizacion) {
     if (!can("cotizaciones.previsualizar")) return;
     setDownloadingId(cotizacion.id);
@@ -242,6 +260,15 @@ export default function CotizacionesPage() {
                               >
                                 <Send className="h-3.5 w-3.5" aria-hidden />
                                 {emittingId === cotizacion.id ? "Emitiendo..." : "Emitir Cotización"}
+                              </button>}
+                              {can("cotizaciones.enviar") && isInternallyApproved(cotizacion) && !emitted && <button
+                                type="button"
+                                onClick={() => void handleEnviar(cotizacion)}
+                                disabled={emittingId !== null || downloadingId !== null}
+                                className="inline-flex items-center gap-1.5 rounded-control border border-secondary/40 px-2.5 py-1.5 text-xs font-medium text-secondary transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                <Send className="h-3.5 w-3.5" aria-hidden />
+                                {emittingId === cotizacion.id ? "Enviando..." : "Enviar al Cliente"}
                               </button>}
                               {can("cotizaciones.previsualizar") && <button
                                 type="button"

@@ -4,6 +4,7 @@ import { ivaLabel } from "@/lib/iva";
 import { forwardRef, type CSSProperties } from "react";
 import Image from "next/image";
 import { Cotizacion, formatearMoneda } from "@/lib/cotizacion-types";
+import { formatDate } from "@/lib/format";
 import { getCotizacionPdfContent } from "@/lib/cotizacion-pdf-content";
 import type { PdfFormatMetadata } from "@/lib/pdf-render-data";
 
@@ -111,13 +112,6 @@ const commercialTerms = [
 
 function valueOrBlank(value: string | null | undefined) {
   return value?.trim() || "";
-}
-
-function formatDate(value: string) {
-  const date = new Date(`${value.slice(0, 10)}T12:00:00`);
-  return Number.isNaN(date.getTime())
-    ? value
-    : date.toLocaleDateString("es-CO");
 }
 
 export const LegacyCotizacionPDF = forwardRef<HTMLDivElement, Props>(

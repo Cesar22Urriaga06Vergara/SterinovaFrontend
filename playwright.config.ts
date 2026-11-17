@@ -13,7 +13,7 @@ export default defineConfig({
   reporter: "list",
   use: {
     channel: process.env.PLAYWRIGHT_CHANNEL || undefined,
-    baseURL: "http://localhost:3000",
+    baseURL: "http://localhost:3004",
     trace: "retain-on-failure",
   },
   projects: [
@@ -24,11 +24,11 @@ export default defineConfig({
   ],
   webServer: {
     command: "npm run dev -- --hostname 0.0.0.0",
-    url: "http://localhost:3000",
+    url: "http://localhost:3004",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     env: {
-      NEXT_PUBLIC_API_URL: "http://localhost:3001",
+      NEXT_PUBLIC_API_URL: "http://localhost:3002",
       PDF_RENDER_SECRET: process.env.PDF_RENDER_SECRET,
     },
   },

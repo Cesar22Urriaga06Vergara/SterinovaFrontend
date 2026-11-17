@@ -31,6 +31,26 @@ export const navigationSections = [
     links: [
       { href: "/configuracion/plantillas", label: "Plantillas", icon: "settings", permission: "formatos.ver" },
       { href: "/configuracion/sellos", label: "Sellos", icon: "badgeCheck", permission: "sellos.ver" },
+      { href: "/configuracion/tasas-fiscales", label: "Tasas fiscales", icon: "dollarSign", permission: "tasas_fiscales.gestionar" },
+    ],
+  },
+  {
+    title: "Gerencia",
+    links: [
+      { href: "/gerencia", label: "Métricas", icon: "barChart3", permission: "gerencia.metricas.ver" },
+      { href: "/gerencia/administradores", label: "Administradores de área", icon: "users", permission: "gerencia.administradores.gestionar" },
+    ],
+  },
+  {
+    title: "Auditoría",
+    links: [
+      { href: "/auditoria", label: "Eventos de auditoría", icon: "fileText", permission: "auditoria.ver" },
+    ],
+  },
+  {
+    title: "Administración",
+    links: [
+      { href: "/administracion/roles-ambitos", label: "Roles y ámbitos", icon: "shield", permissions: ["roles.gestionar", "ambitos.gestionar"] },
     ],
   },
 ] as const;
@@ -47,8 +67,16 @@ function hasRequiredPermission(
 }
 
 export function getHomePath(permissions: readonly string[] = []): string {
- if (permissions.includes('usuarios.identidad.gestionar')) return '/';
- return ['/comercial','/logistica','/planta','/calidad','/'].find(path => canAccessPath(path, permissions)) ?? '/';
+  if (permissions.includes('usuarios.identidad.gestionar')) return '/';
+  return [
+    '/comercial',
+    '/logistica',
+    '/planta',
+    '/calidad',
+    '/gerencia',
+    '/auditoria',
+    '/',
+  ].find((path) => canAccessPath(path, permissions)) ?? '/';
 }
 
 export function canAccessPath(pathname: string, permissions: readonly string[] = []): boolean {
@@ -68,6 +96,11 @@ export function canAccessPath(pathname: string, permissions: readonly string[] =
     ["/usuarios", "usuarios.ver"],
     ["/configuracion/plantillas", "formatos.ver"],
     ["/configuracion/sellos", "sellos.ver"],
+    ["/configuracion/tasas-fiscales", "tasas_fiscales.gestionar"],
+    ["/gerencia/administradores", "gerencia.administradores.gestionar"],
+    ["/gerencia", "gerencia.metricas.ver"],
+    ["/auditoria", "auditoria.ver"],
+    ["/administracion/roles-ambitos", ["roles.gestionar", "ambitos.gestionar"]],
   ];
   const match = [...pathPermissions]
     .sort(([first], [second]) => second.length - first.length)

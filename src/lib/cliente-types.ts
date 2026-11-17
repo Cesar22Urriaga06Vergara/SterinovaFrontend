@@ -8,6 +8,7 @@ export type Cliente = {
   direccion: string;
   cargo?: string | null;
   ciudad?: string | null;
+  activo?: boolean | null;
 };
 
 export type ClienteDatosDocumento = Cliente;

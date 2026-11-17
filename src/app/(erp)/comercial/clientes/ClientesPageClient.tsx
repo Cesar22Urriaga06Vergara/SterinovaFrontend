@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/ui/states/EmptyState";
 import { ErrorState } from "@/components/ui/states/ErrorState";
 import { LoadingState } from "@/components/ui/states/LoadingState";
 import { getApiErrorMessage } from "@/lib/api-errors";
+import { useSession } from "@/lib/session";
 import type { Cliente } from "@/lib/cliente-types";
 import {
   ClienteImportacion,
@@ -27,6 +28,12 @@ const emptyForm = {
 };
 
 export default function ClientesPage() {
+  const { permissions } = useSession();
+  const canCreate = permissions.includes("clientes.crear");
+  const canImport = permissions.includes("clientes.importar");
+  const canActivar = permissions.includes("clientes.activar");
+  const canInactivar = permissions.includes("clientes.inactivar");
+  const canEdit = permissions.includes("clientes.editar");
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -105,6 +112,16 @@ export default function ClientesPage() {
     } finally {
       submitLock.current = false;
       setSaving(false);
+    }
+  }
+
+  async function toggleStatus(cliente: Cliente) {
+    setError("");
+    try {
+      await api.patch(`/clientes/${cliente.id}`, { activo: !(cliente.activo ?? true) });
+      await loadClientes();
+    } catch (saveError) {
+      setError(getApiErrorMessage(saveError));
     }
   }
 
@@ -188,24 +205,25 @@ export default function ClientesPage() {
             className="hidden"
             onChange={handleExcelImport}
           />
-          <Button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            variant="ghost"
-            title="Columnas de Excel: CLIENTE (razón social), ID (NIT), contacto, teléfono, email y dirección."
-            loading={importing}
-            loadingLabel="Importando..."
-          >
-            <Upload className="h-4 w-4" aria-hidden />
-            Importar desde Excel
-          </Button>
-          <Button
-            type="button"
-            onClick={() => setModalOpen(true)}
-          >
-            <Plus className="h-4 w-4" aria-hidden />
-            Nuevo Cliente
-          </Button>
+{canImport ? (
+            <Button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              variant="ghost"
+              title="Columnas de Excel: CLIENTE (razón social), ID (NIT), contacto, teléfono, email y dirección."
+              loading={importing}
+              loadingLabel="Importando..."
+            >
+              <Upload className="h-4 w-4" aria-hidden />
+              Importar desde Excel
+            </Button>
+          ) : null}
+          {canCreate ? (
+            <Button type="button" onClick={() => setModalOpen(true)}>
+              <Plus className="h-4 w-4" aria-hidden />
+              Nuevo Cliente
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -264,30 +282,48 @@ export default function ClientesPage() {
                   <td className="px-4 py-3">{cliente.telefono}</td>
                   <td className="px-4 py-3">{cliente.email}</td>
                   <td className="px-4 py-3">
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        setEditingCliente(cliente);
-                        setForm({
-                          razon_social: cliente.razon_social,
-                          nit: cliente.nit,
-                          contacto: cliente.contacto,
-                          telefono: cliente.telefono,
-                          email: cliente.email,
-                          direccion: cliente.direccion,
-                        });
-                        setError("");
-                        setSuccess("");
-                        setModalOpen(true);
-                      }}
-                      variant="ghost"
-                      size="sm"
-                      className="font-medium"
-                      aria-label={`Editar ${cliente.razon_social}`}
-                    >
-                      <Pencil className="h-4 w-4" aria-hidden />
-                      Editar
-                    </Button>
+                    {canEdit && (
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          setEditingCliente(cliente);
+                          setForm({
+                            razon_social: cliente.razon_social,
+                            nit: cliente.nit,
+                            contacto: cliente.contacto,
+                            telefono: cliente.telefono,
+                            email: cliente.email,
+                            direccion: cliente.direccion,
+                          });
+                          setError("");
+                          setSuccess("");
+                          setModalOpen(true);
+                        }}
+                        variant="ghost"
+                        size="sm"
+                        className="font-medium"
+                        aria-label={`Editar ${cliente.razon_social}`}
+                      >
+                        <Pencil className="h-4 w-4" aria-hidden />
+                        Editar
+                      </Button>
+                    )}
+                    {(canActivar || canInactivar) && cliente.activo != null && (
+                      <Button
+                        type="button"
+                        onClick={() => void toggleStatus(cliente)}
+                        variant="ghost"
+                        size="sm"
+                        className="font-medium text-xs"
+                        aria-label={
+                          cliente.activo
+                            ? `Inactivar ${cliente.razon_social}`
+                            : `Activar ${cliente.razon_social}`
+                        }
+                      >
+                        {cliente.activo ? "Inactivar" : "Activar"}
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}
