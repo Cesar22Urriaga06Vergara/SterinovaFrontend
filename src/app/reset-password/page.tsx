@@ -6,6 +6,7 @@ import { API_BASE_URL } from "@/lib/api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { BrandLogo } from "@/components/BrandLogo";
 
 export default function ResetPasswordPage() {
   const token = useRef("");
@@ -53,16 +54,16 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-sterinova-light px-4">
-      <section className="w-full max-w-md space-y-5 rounded-2xl bg-white p-8 shadow-lg ring-1 ring-sterinova-dark/10">
+    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
+      <section className="w-full max-w-md space-y-5 rounded-dialog border border-surface-border bg-surface p-6 shadow-lg sm:p-8">
         <div className="text-center">
-          <p className="text-sm font-semibold tracking-[0.2em] text-secondary uppercase">Sterinova</p>
-          <h1 className="mt-2 text-2xl font-bold text-sterinova-dark">Restablecer contraseña</h1>
+          <BrandLogo />
+          <h1 className="mt-5 text-h3 text-surface-foreground">Restablecer contraseña</h1>
         </div>
         {complete ? (
           <div role="status" className="space-y-4 text-center">
             <p>La contraseña se actualizó. Las sesiones anteriores fueron invalidadas.</p>
-            <a className="font-semibold text-sterinova-teal underline" href="/login">Ir al inicio de sesión</a>
+            <a className="rounded-control font-semibold text-secondary underline hover:text-secondary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2" href="/login">Ir al inicio de sesión</a>
           </div>
         ) : (
           <form onSubmit={submit} className="space-y-4">
@@ -86,7 +87,7 @@ export default function ResetPasswordPage() {
               value={confirmation}
               onChange={(event) => setConfirmation(event.target.value)}
             />
-            {error ? <p role="alert" className="text-sm text-red-700">{error}</p> : null}
+            {error ? <p role="alert" className="text-sm font-medium text-error">{error}</p> : null}
             <Button type="submit" loading={loading} loadingLabel="Actualizando..." className="w-full">
               Actualizar contraseña
             </Button>

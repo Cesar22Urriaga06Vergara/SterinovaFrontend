@@ -121,17 +121,17 @@ function AuthorizedErpLayout({ children }: { children: React.ReactNode }) {
         inert={!canRenderRoute}
         className={
           canRenderRoute
-            ? "flex min-h-screen flex-col bg-sterinova-light md:flex-row"
+            ? "flex min-h-screen flex-col bg-background md:flex-row"
             : "hidden"
         }
       >
         <a
           href="#main-content"
-          className="sr-only z-50 rounded-control bg-white px-4 py-2 font-semibold text-sterinova-dark shadow focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          className="sr-only z-50 rounded-control bg-surface px-4 py-2 font-semibold text-surface-foreground shadow focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           Saltar al contenido principal
         </a>
-        <div className="w-full border-b border-sterinova-dark/5 bg-white px-4 py-2 md:hidden">
+        <div className="w-full border-b border-surface-border bg-surface px-4 py-2 md:hidden">
           <button
             ref={menuButtonRef}
             id="erp-menu-toggle"
@@ -139,7 +139,7 @@ function AuthorizedErpLayout({ children }: { children: React.ReactNode }) {
             aria-controls="erp-sidebar"
             aria-expanded={mobileNavOpen}
             onClick={() => setMobileNavOpen((open) => !open)}
-            className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-sterinova-dark hover:bg-sterinova-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            className="inline-flex items-center gap-2 rounded-control px-3 py-2 text-sm font-medium text-surface-foreground hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             <Menu className="h-5 w-5" aria-hidden />
             Menú
@@ -151,9 +151,9 @@ function AuthorizedErpLayout({ children }: { children: React.ReactNode }) {
           <main
             id="main-content"
             tabIndex={-1}
-            className="flex-1 overflow-auto bg-sterinova-light p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary md:p-6"
+            className="flex-1 overflow-auto bg-background p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary md:p-6 lg:p-8"
           >
-            {children}
+            {canRenderRoute ? children : null}
           </main>
         </div>
       </div>
@@ -163,7 +163,7 @@ function AuthorizedErpLayout({ children }: { children: React.ReactNode }) {
 
 function LayoutLoading() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-sterinova-light text-sterinova-teal">
+    <div className="flex min-h-screen items-center justify-center bg-background text-secondary">
       Cargando...
     </div>
   );

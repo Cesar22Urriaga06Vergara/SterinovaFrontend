@@ -146,14 +146,14 @@ export default function NuevoCicloPage() {
       <div>
         <Link
           href="/planta"
-          className="text-sm font-medium text-sterinova-teal hover:underline"
+          className="text-sm font-medium text-secondary hover:underline"
         >
           ← Volver a Planta
         </Link>
-        <h1 className="mt-3 text-3xl font-bold text-sterinova-dark">
+        <h1 className="mt-3 text-3xl font-bold text-surface-foreground">
           Registrar Ciclo de Esterilización
         </h1>
-        <p className="mt-1 text-sterinova-teal">Orden #{ordenId ?? "—"}</p>
+        <p className="mt-1 text-secondary">Orden #{ordenId ?? "—"}</p>
       </div>
 
       {success ? (
@@ -162,7 +162,7 @@ export default function NuevoCicloPage() {
         </p>
       ) : null}
       {error ? (
-        <p className="text-sm font-medium text-red-600" role="alert">
+        <p className="text-sm font-medium text-error" role="alert">
           {error}
         </p>
       ) : null}
@@ -174,11 +174,11 @@ export default function NuevoCicloPage() {
       ) : null}
       <form
         onSubmit={handleSubmit}
-        className="grid gap-5 rounded-xl bg-white p-6 shadow-sm ring-1 ring-sterinova-dark/10 sm:grid-cols-2"
+        className="grid gap-5 rounded-xl bg-surface p-6 shadow-sm ring-1 ring-surface-border sm:grid-cols-2"
       >
         <label
           htmlFor="equipo"
-          className="space-y-1 text-sm font-medium text-sterinova-dark sm:col-span-2"
+          className="space-y-1 text-sm font-medium text-surface-foreground sm:col-span-2"
         >
           Equipo
           <input
@@ -190,13 +190,13 @@ export default function NuevoCicloPage() {
               setForm((current) => ({ ...current, equipo: event.target.value }))
             }
             placeholder="CICLO 10M68"
-            className="w-full rounded-lg border border-sterinova-dark/20 bg-sterinova-light px-3 py-2 font-normal outline-none focus:border-sterinova-teal"
+            className="w-full rounded-lg border border-surface-border bg-background px-3 py-2 font-normal outline-none focus:border-secondary"
           />
         </label>
 
         <label
           htmlFor="metodo"
-          className="space-y-1 text-sm font-medium text-sterinova-dark"
+          className="space-y-1 text-sm font-medium text-surface-foreground"
         >
           Método
           <select
@@ -211,14 +211,14 @@ export default function NuevoCicloPage() {
                 metodo: event.target.value as MetodoEsterilizacion,
               }))
             }
-            className="w-full rounded-lg border border-sterinova-dark/20 bg-sterinova-light px-3 py-2 font-normal outline-none focus:border-sterinova-teal"
+            className="w-full rounded-lg border border-surface-border bg-background px-3 py-2 font-normal outline-none focus:border-secondary"
           >
             <option value="ETO">EtO</option>
             <option value="VAPOR">Vapor</option>
           </select>
         </label>
 
-        <label className="space-y-1 text-sm font-medium text-sterinova-dark">
+        <label className="space-y-1 text-sm font-medium text-surface-foreground">
           Fecha de esterilización
           <input
             required
@@ -243,13 +243,13 @@ export default function NuevoCicloPage() {
           <p role="alert">No hay protocolo compatible disponible.</p>
         ) : null}
         <fieldset className="space-y-3 sm:col-span-2">
-          <legend className="text-sm font-semibold text-sterinova-dark">
+          <legend className="text-sm font-semibold text-surface-foreground">
             Cantidad procesada por material
           </legend>
           {(orden?.materiales ?? []).map((material) => (
             <label
               key={material.id}
-              className="grid gap-1 text-sm font-medium text-sterinova-dark sm:grid-cols-[1fr_180px]"
+              className="grid gap-1 text-sm font-medium text-surface-foreground sm:grid-cols-[1fr_180px]"
             >
               <span>
                 {material.descripcion}
@@ -285,7 +285,7 @@ export default function NuevoCicloPage() {
           <label
             key={key}
             htmlFor={key}
-            className="space-y-1 text-sm font-medium text-sterinova-dark"
+            className="space-y-1 text-sm font-medium text-surface-foreground"
           >
             {label}
             <input
@@ -302,14 +302,14 @@ export default function NuevoCicloPage() {
                   [key]: event.target.value,
                 }))
               }
-              className="w-full rounded-lg border border-sterinova-dark/20 bg-sterinova-light px-3 py-2 font-normal outline-none focus:border-sterinova-teal"
+              className="w-full rounded-lg border border-surface-border bg-background px-3 py-2 font-normal outline-none focus:border-secondary"
             />
           </label>
         ))}
 
         <label
           htmlFor="control_biologico"
-          className="space-y-1 text-sm font-medium text-sterinova-dark"
+          className="space-y-1 text-sm font-medium text-surface-foreground"
         >
           Control Biológico
           <input
@@ -324,13 +324,13 @@ export default function NuevoCicloPage() {
               }))
             }
             placeholder="Negativo"
-            className="w-full rounded-lg border border-sterinova-dark/20 bg-sterinova-light px-3 py-2 font-normal outline-none focus:border-sterinova-teal"
+            className="w-full rounded-lg border border-surface-border bg-background px-3 py-2 font-normal outline-none focus:border-secondary"
           />
         </label>
 
         <label
           htmlFor="control_quimico"
-          className="space-y-1 text-sm font-medium text-sterinova-dark"
+          className="space-y-1 text-sm font-medium text-surface-foreground"
         >
           Control Químico
           <input
@@ -345,14 +345,14 @@ export default function NuevoCicloPage() {
               }))
             }
             placeholder="Cambio de color"
-            className="w-full rounded-lg border border-sterinova-dark/20 bg-sterinova-light px-3 py-2 font-normal outline-none focus:border-sterinova-teal"
+            className="w-full rounded-lg border border-surface-border bg-background px-3 py-2 font-normal outline-none focus:border-secondary"
           />
         </label>
 
         <div className="flex justify-end gap-3 sm:col-span-2">
           <Link
             href="/planta"
-            className="rounded-lg px-4 py-2 text-sm font-medium text-sterinova-dark hover:bg-sterinova-light"
+            className="rounded-lg px-4 py-2 text-sm font-medium text-surface-foreground hover:bg-background"
           >
             Cancelar
           </Link>
@@ -365,7 +365,7 @@ export default function NuevoCicloPage() {
               !cantidadesCompletas ||
               !orden?.materiales?.length
             }
-            className="rounded-lg bg-sterinova-orange px-4 py-2 text-sm font-semibold text-white disabled:opacity-70"
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-70"
           >
             {saving ? "Guardando..." : "Registrar Ciclo"}
           </button>

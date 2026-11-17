@@ -33,7 +33,7 @@ export function EvaluacionTecnica({
       disabled={disabled}
       className="space-y-4 rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200"
     >
-      <legend className="px-1 text-xl font-bold text-sterinova-dark">
+      <legend className="px-1 text-xl font-bold text-surface-foreground">
         Evaluación técnica
       </legend>
       <p className="text-sm text-slate-600">
@@ -69,7 +69,7 @@ export function EvaluacionTecnica({
                     aria-label={`Especificación de ${label}`}
                     value={seleccion.opcion}
                     onChange={(e) => update({ opcion: e.target.value })}
-                    className="mt-1 w-full rounded-lg border border-slate-300 p-2"
+                    className="mt-1 w-full rounded-lg border border-surface-border p-2"
                   >
                     <option value="">Seleccionar...</option>
                     {row.opciones.map((opcion, i) => (
@@ -86,7 +86,7 @@ export function EvaluacionTecnica({
                     aria-label={`Evaluación de ${label}`}
                     value={seleccion.criterio}
                     onChange={(e) => update({ criterio: e.target.value })}
-                    className="mt-1 w-full rounded-lg border border-slate-300 p-2"
+                    className="mt-1 w-full rounded-lg border border-surface-border p-2"
                   >
                     <option value="">Seleccionar...</option>
                     <option value="CUMPLE">Cumple</option>

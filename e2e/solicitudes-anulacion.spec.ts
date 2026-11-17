@@ -92,7 +92,7 @@ test("un asesor sin permiso es redirigido y no consulta pendientes", async ({
   await page.goto("/solicitudes");
   await expect(page).toHaveURL(/\/comercial$/);
   await expect(
-    page.getByRole("link", { name: "Solicitudes Pendientes" }),
+    page.getByRole("link", { name: "Solicitudes de anulación" }),
   ).toHaveCount(0);
   expect(fetched).toBe(false);
 });
@@ -144,7 +144,7 @@ for (const decision of ["APROBADA", "RECHAZADA"] as const) {
     );
     await page.goto("/solicitudes");
     await expect(
-      page.getByRole("link", { name: "Solicitudes Pendientes" }),
+      page.getByRole("link", { name: "Solicitudes de anulación" }),
     ).toBeVisible();
     await expect(page.getByRole("cell", { name: "Luis Pérez" })).toBeVisible();
     await expect(

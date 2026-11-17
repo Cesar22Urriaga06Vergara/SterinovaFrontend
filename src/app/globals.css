@@ -2,8 +2,9 @@
 @config "../../tailwind.config.ts";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --background: #f4f6f8;
+  --foreground: #1e293b;
 }
 
 @theme inline {
@@ -11,23 +12,16 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --color-sterinova-dark: #0c4a4e;
-  --color-sterinova-orange: #e54d21;
-  --color-sterinova-teal: #188f95;
+  --color-sterinova-dark: #0a464c;
+  --color-sterinova-orange: #eb4824;
+  --color-sterinova-teal: #0d777a;
   --color-sterinova-light: #f3f4f6;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
 .pdf-render-host {

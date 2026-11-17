@@ -16,6 +16,9 @@ import type {
   CertificadoEsterilizacion,
 } from "@/lib/calidad-types";
 import { getRejectReasonError } from "@/lib/calidad-validation";
+import { formatDateTime } from "@/lib/format";
+import { useSession } from "@/lib/session";
+import { Modal } from "@/components/ui/Modal";
 
 function errorMessage(error: unknown, fallback: string) {
   if (typeof error === "object" && error && "response" in error) {
@@ -28,14 +31,11 @@ function errorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
-function formatDate(value: string) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? value
-    : date.toLocaleString("es-CO", { dateStyle: "long", timeStyle: "short" });
-}
-
 export default function RevisarCicloPage() {
+  const { can } = useSession();
+  const canApprove = can("calidad.aprobar");
+  const canReject = can("calidad.rechazar");
+  const canDownload = can("certificados.descargar");
   const params = useParams<{ ciclo_id: string }>();
   const router = useRouter();
   const cicloId = Number(params.ciclo_id);
@@ -83,7 +83,7 @@ export default function RevisarCicloPage() {
 
   async function handleApprove(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!ciclo) return;
+    if (!ciclo || !canApprove || saving || issuedCertificate) return;
     const evaluaciones = evaluacionesParaAprobar(
       ciclo.protocolo_version ?? undefined,
       selecciones,
@@ -124,7 +124,7 @@ export default function RevisarCicloPage() {
   }
 
   async function handleDownloadCertificate() {
-    if (!issuedCertificate) return;
+    if (!issuedCertificate || !canDownload || downloadingCertificate) return;
     setDownloadingCertificate(true);
     setError("");
     try {
@@ -143,7 +143,7 @@ export default function RevisarCicloPage() {
 
   async function handleReject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!ciclo) return;
+    if (!ciclo || !canReject || saving || issuedCertificate) return;
     const reasonError = getRejectReasonError(motivo);
     if (reasonError) {
       setError(reasonError);
@@ -174,7 +174,7 @@ export default function RevisarCicloPage() {
     <div className="mx-auto w-full max-w-5xl space-y-6">
       <Link
         href="/calidad"
-        className="inline-flex items-center gap-2 text-sm font-semibold text-sterinova-teal hover:underline"
+        className="inline-flex items-center gap-2 text-sm font-semibold text-secondary hover:underline"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden /> Volver a Calidad
       </Link>
@@ -187,7 +187,7 @@ export default function RevisarCicloPage() {
           El ciclo solicitado no es válido.
         </p>
       ) : loading ? (
-        <div className="rounded-xl bg-white p-12 text-center text-sterinova-teal shadow-sm">
+        <div className="rounded-xl bg-surface p-12 text-center text-secondary shadow-sm">
           Cargando datos del ciclo...
         </div>
       ) : error && !ciclo ? (
@@ -201,10 +201,10 @@ export default function RevisarCicloPage() {
         <>
           <header className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-sterinova-teal">
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-secondary">
                 Revisión de ciclo #{ciclo.id}
               </p>
-              <h1 className="mt-1 text-3xl font-bold text-sterinova-dark">
+              <h1 className="mt-1 text-3xl font-bold text-surface-foreground">
                 Orden {ciclo.orden?.consecutivo ?? `#${ciclo.orden_id}`}
               </h1>
               <p className="mt-1 text-slate-600">
@@ -243,7 +243,7 @@ export default function RevisarCicloPage() {
                   El PDF oficial quedó guardado en el servidor.
                 </p>
               </div>
-              <button
+              {canDownload ? <button
                 type="button"
                 onClick={() => void handleDownloadCertificate()}
                 disabled={downloadingCertificate || !issuedCertificate.pdf_url}
@@ -257,7 +257,7 @@ export default function RevisarCicloPage() {
                 {downloadingCertificate
                   ? "Descargando..."
                   : "Descargar Certificado"}
-              </button>
+              </button> : null}
             </section>
           ) : null}
 
@@ -266,25 +266,27 @@ export default function RevisarCicloPage() {
               ["Método", ciclo.metodo === "ETO" ? "EtO" : "Vapor"],
               ["Equipo", ciclo.equipo],
               ["Operador", ciclo.operador?.nombre ?? "—"],
-              ["Fecha de proceso", formatDate(ciclo.fecha_proceso)],
+              ["Fecha de proceso", formatDateTime(ciclo.fecha_proceso, {
+                dateStyle: "long",
+              })],
             ].map(([label, value]) => (
               <div
                 key={label}
-                className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-sterinova-dark/10"
+                className="rounded-xl bg-surface p-4 shadow-sm ring-1 ring-surface-border"
               >
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   {label}
                 </p>
-                <p className="mt-1 font-semibold text-sterinova-dark">
+                <p className="mt-1 font-semibold text-surface-foreground">
                   {value}
                 </p>
               </div>
             ))}
           </section>
 
-          <section className="space-y-4 rounded-xl bg-white p-5 shadow-sm ring-1 ring-sterinova-dark/10 sm:p-6">
+          <section className="space-y-4 rounded-xl bg-surface p-5 shadow-sm ring-1 ring-surface-border sm:p-6">
             <div>
-              <h2 className="text-xl font-bold text-sterinova-dark">
+              <h2 className="text-xl font-bold text-surface-foreground">
                 Parámetros del proceso
               </h2>
               <p className="mt-1 text-sm text-slate-500">
@@ -296,7 +298,7 @@ export default function RevisarCicloPage() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Control biológico
                 </p>
-                <p className="mt-1 font-semibold text-sterinova-dark">
+                <p className="mt-1 font-semibold text-surface-foreground">
                   {ciclo.control_biologico || "Sin resultado"}
                 </p>
               </div>
@@ -304,14 +306,14 @@ export default function RevisarCicloPage() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Control químico
                 </p>
-                <p className="mt-1 font-semibold text-sterinova-dark">
+                <p className="mt-1 font-semibold text-surface-foreground">
                   {ciclo.control_quimico || "Sin resultado"}
                 </p>
               </div>
             </div>
             {ciclo.orden?.materiales?.length ? (
               <div className="border-t border-slate-200 pt-4">
-                <h3 className="text-sm font-bold text-sterinova-dark">
+                <h3 className="text-sm font-bold text-surface-foreground">
                   Detalle de materiales relacionado a la orden
                 </h3>
                 <ul className="mt-2 space-y-1 text-sm text-slate-600">
@@ -330,21 +332,21 @@ export default function RevisarCicloPage() {
             ciclo={ciclo}
             value={selecciones}
             onChange={setSelecciones}
-            disabled={saving || !!issuedCertificate}
+            disabled={saving || !!issuedCertificate || (!canApprove && !canReject)}
           />
           {!issuedCertificate ? (
             <div className="flex flex-wrap justify-end gap-3">
-              <button
+              {canReject ? <button
                 type="button"
                 onClick={() => {
                   setError("");
                   setRejectOpen(true);
                 }}
-                className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-3 text-sm font-bold text-red-700 hover:bg-red-50"
+                className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-surface px-4 py-3 text-sm font-bold text-red-700 hover:bg-red-50"
               >
                 <X className="h-4 w-4" aria-hidden /> Rechazar
-              </button>
-              <button
+              </button> : null}
+              {canApprove ? <button
                 type="button"
                 disabled={
                   !evaluacionesParaAprobar(
@@ -360,31 +362,27 @@ export default function RevisarCicloPage() {
               >
                 <Check className="h-4 w-4" aria-hidden /> Aprobar y Emitir
                 Certificado
-              </button>
+              </button> : null}
             </div>
           ) : null}
         </>
       ) : null}
 
-      {approvalOpen ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
-          role="presentation"
+      {approvalOpen && canApprove ? (
+        <Modal
+          open
+          title="Confirmar firma electrónica"
+          onClose={() => {
+            if (saving) return;
+            setApprovalOpen(false);
+            setPassword("");
+          }}
         >
           <form
             onSubmit={handleApprove}
-            role="dialog"
-            aria-modal="true"
-            className="w-full max-w-md space-y-4 rounded-2xl bg-white p-6 shadow-2xl"
-            aria-labelledby="approval-title"
+            className="space-y-4"
           >
             <div>
-              <h2
-                id="approval-title"
-                className="text-xl font-bold text-sterinova-dark"
-              >
-                Confirmar firma electrónica
-              </h2>
               <p className="mt-1 text-sm text-slate-600">
                 Vuelve a ingresar la contraseña del Coordinador de Calidad para
                 aprobar el ciclo y emitir el certificado.
@@ -401,19 +399,19 @@ export default function RevisarCicloPage() {
             <label className="block space-y-1.5 text-sm font-semibold text-slate-700">
               Contraseña de Calidad
               <input
-                autoFocus
                 required
                 maxLength={128}
                 type="password"
                 autoComplete="current-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-sterinova-teal focus:ring-2 focus:ring-sterinova-teal/20"
+                className="w-full rounded-lg border border-surface-border px-3 py-2.5 outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/30"
               />
             </label>
             <div className="flex justify-end gap-3">
               <button
                 type="button"
+                disabled={saving}
                 onClick={() => {
                   setApprovalOpen(false);
                   setPassword("");
@@ -436,28 +434,24 @@ export default function RevisarCicloPage() {
               </button>
             </div>
           </form>
-        </div>
+        </Modal>
       ) : null}
 
-      {rejectOpen ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
-          role="presentation"
+      {rejectOpen && canReject ? (
+        <Modal
+          open
+          title="Rechazar ciclo"
+          onClose={() => {
+            if (saving) return;
+            setRejectOpen(false);
+            setMotivo("");
+          }}
         >
           <form
             onSubmit={handleReject}
-            role="dialog"
-            aria-modal="true"
-            className="w-full max-w-md space-y-4 rounded-2xl bg-white p-6 shadow-2xl"
-            aria-labelledby="reject-title"
+            className="space-y-4"
           >
             <div>
-              <h2
-                id="reject-title"
-                className="text-xl font-bold text-sterinova-dark"
-              >
-                Rechazar ciclo
-              </h2>
               <p className="mt-1 text-sm text-slate-600">
                 El motivo quedará registrado con tu identidad y fecha de
                 revisión.
@@ -474,19 +468,19 @@ export default function RevisarCicloPage() {
             <label className="block space-y-1.5 text-sm font-semibold text-slate-700">
               Motivo del rechazo
               <textarea
-                autoFocus
                 required
                 minLength={1}
                 maxLength={2000}
                 rows={4}
                 value={motivo}
                 onChange={(event) => setMotivo(event.target.value)}
-                className="w-full resize-y rounded-lg border border-slate-300 px-3 py-2.5 font-normal outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/15"
+                className="w-full resize-y rounded-lg border border-surface-border px-3 py-2.5 font-normal outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/15"
               />
             </label>
             <div className="flex justify-end gap-3">
               <button
                 type="button"
+                disabled={saving}
                 onClick={() => {
                   setRejectOpen(false);
                   setMotivo("");
@@ -509,7 +503,7 @@ export default function RevisarCicloPage() {
               </button>
             </div>
           </form>
-        </div>
+        </Modal>
       ) : null}
     </div>
   );

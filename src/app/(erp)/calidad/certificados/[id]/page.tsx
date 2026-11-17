@@ -7,6 +7,7 @@ import { ArrowLeft, Download, LoaderCircle } from "lucide-react";
 import { api, downloadPdfFromBackend } from "@/lib/api";
 import type { CertificadoEsterilizacion } from "@/lib/calidad-types";
 import { CertificadoPDF } from "@/components/pdf/CertificadoPDF";
+import { useSession } from "@/lib/session";
 
 function errorMessage(error: unknown) {
   if (typeof error === "object" && error && "response" in error) {
@@ -19,6 +20,8 @@ function errorMessage(error: unknown) {
 }
 
 export default function CertificadoDescargaPage() {
+  const { can } = useSession();
+  const canDownload = can("certificados.descargar");
   const params = useParams<{ id: string }>();
   const certificateId = Number(params.id);
   const pdfRef = useRef<HTMLDivElement>(null);
@@ -51,7 +54,7 @@ export default function CertificadoDescargaPage() {
   }, [certificateId]);
 
   async function downloadPdf() {
-    if (!certificate) return;
+    if (!certificate || !canDownload || downloading) return;
     setDownloading(true);
     setError("");
     try {
@@ -76,22 +79,22 @@ export default function CertificadoDescargaPage() {
         <div>
           <Link
             href="/calidad"
-            className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-sterinova-teal hover:underline"
+            className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-secondary hover:underline"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden /> Volver a Calidad
           </Link>
-          <h1 className="text-3xl font-bold text-sterinova-dark">
+          <h1 className="text-3xl font-bold text-surface-foreground">
             Certificado {certificate?.consecutivo ?? ""}
           </h1>
           <p className="mt-1 text-sm text-slate-600">
             Documento oficial de esterilización · R-AQ-09 · Versión 05
           </p>
         </div>
-        <button
+        {canDownload ? <button
           type="button"
           onClick={() => void downloadPdf()}
           disabled={loading || downloading || !certificate?.pdf_url}
-          className="inline-flex items-center gap-2 rounded-lg bg-sterinova-dark px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-sterinova-teal disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-lg bg-secondary px-5 py-3 text-sm font-bold text-secondary-foreground shadow-sm hover:bg-secondary-hover disabled:cursor-not-allowed disabled:opacity-60"
         >
           {downloading ? (
             <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />
@@ -99,7 +102,7 @@ export default function CertificadoDescargaPage() {
             <Download className="h-4 w-4" aria-hidden />
           )}
           {downloading ? "Descargando PDF..." : "Descargar PDF Oficial"}
-        </button>
+        </button> : null}
       </div>
 
       {error ? (
@@ -119,13 +122,13 @@ export default function CertificadoDescargaPage() {
         </p>
       ) : null}
       {loading && Number.isInteger(certificateId) ? (
-        <div className="rounded-xl bg-white p-10 text-center text-sterinova-teal">
+        <div className="rounded-xl bg-surface p-10 text-center text-secondary">
           Cargando certificado...
         </div>
       ) : null}
       {!loading && certificate ? (
         <>
-          <div className="overflow-auto rounded-xl bg-slate-200 p-4 shadow-inner print:overflow-visible print:bg-white print:p-0">
+          <div className="overflow-auto rounded-xl bg-slate-200 p-4 shadow-inner print:overflow-visible print:bg-surface print:p-0">
             <div className="pdf-print-root certificate-print-root mx-auto w-fit">
               <CertificadoPDF ref={pdfRef} data={certificate} />
             </div>

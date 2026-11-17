@@ -137,6 +137,41 @@ fondo, bloqueo del scroll de fondo y devolución del foco al elemento previo.
 </Modal>
 ```
 
+## Composición y estados
+
+### `PageHeader`
+
+Encabezado compartido de las vistas del ERP. Recibe `title`, `description` y
+`actions` opcional. Renderiza un único `h1` y agrupa las acciones a la derecha
+en pantallas anchas y debajo del título en móvil.
+
+```tsx
+<PageHeader
+  title="Logística"
+  description="Órdenes de servicio y recolección."
+  actions={<Button>Generar orden</Button>}
+/>
+```
+
+### `Card`
+
+Superficie base para agrupar contenido: `Card`, `CardHeader`, `CardTitle`,
+`CardDescription`, `CardContent` y `CardFooter` usan los tokens de superficie,
+borde y radio. No sustituye a `Modal` ni a los estados; solo define la
+contención visual.
+
+### `Skeleton` y `TableSkeleton`
+
+Marcadores de carga con `aria-hidden="true"`. El estado debe anunciarse aparte
+con `role="status"`, por ejemplo `TableState` con `loading`.
+
+### Estados de vista
+
+`LoadingState`, `EmptyState`, `ErrorState` y `TableState` comunican espera,
+ausencia de datos, fallo recuperable y estados dentro de una tabla. Ubica la
+rama de carga antes de la de vacío y ofrece `onRetry` cuando la vista puede
+reintentar la carga.
+
 ## Vistas piloto
 
 - Login: `Input` para correo/contraseña y `Button` para envío y carga.

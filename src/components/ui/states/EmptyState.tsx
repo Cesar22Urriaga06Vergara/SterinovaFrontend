@@ -20,21 +20,23 @@ export function EmptyState({
   return (
     <section
       aria-labelledby={titleId}
-      className="flex flex-col items-center rounded-xl bg-white px-6 py-10 text-center shadow-sm ring-1 ring-sterinova-dark/10"
+      className="flex flex-col items-center rounded-card border border-surface-border bg-surface px-6 py-10 text-center shadow-sm"
     >
-      <Inbox className="h-8 w-8 text-sterinova-teal" aria-hidden />
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary-light">
+        <Inbox className="h-6 w-6 text-secondary" aria-hidden />
+      </span>
       <h2
         id={titleId}
-        className="mt-3 text-lg font-semibold text-sterinova-dark"
+        className="mt-4 text-h6 text-surface-foreground"
       >
         {title}
       </h2>
-      <p className="mt-1 max-w-md text-sm text-secondary">{message}</p>
+      <p className="mt-1 max-w-md text-body text-secondary">{message}</p>
       {action ? (
         <button
           type="button"
           onClick={action.onClick}
-          className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          className="mt-4 rounded-control bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           {action.label}
         </button>

@@ -109,7 +109,7 @@ test("el Dashboard muestra áreas autorizadas sin métricas ficticias", () => {
 
   assert.match(dashboardPage, /export const instant = false/);
   assert.match(dashboardClient, /getDashboardSections/);
-  assert.match(dashboardClient, /Tus áreas de trabajo/);
+  assert.match(dashboardClient, /Accesos de trabajo/);
   assert.doesNotMatch(dashboardClient, /Métricas en construcción/);
   assert.doesNotMatch(dashboardClient, /\/api\/metrics/);
   assert.doesNotMatch(dashboardClient, /Demo · Pendiente de conexión a la API/);

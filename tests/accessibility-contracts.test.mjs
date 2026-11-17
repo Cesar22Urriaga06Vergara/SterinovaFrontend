@@ -108,6 +108,7 @@ test("las tablas operativas comparten el estado visual de carga y vacío", () =>
 
   for (const relativePath of [
     "src/app/(erp)/planta/page.tsx",
+    "src/app/(erp)/logistica/page.tsx",
     "src/app/(erp)/calidad/page.tsx",
     "src/app/(erp)/comercial/cotizaciones/CotizacionesClient.tsx",
     "src/app/(erp)/usuarios/UsersTable.tsx",
@@ -121,22 +122,64 @@ test("las tablas operativas comparten el estado visual de carga y vacío", () =>
 test("las vistas operativas separan error de carga de un vacío válido", () => {
   const quality = read("src/app/(erp)/calidad/page.tsx");
   const plant = read("src/app/(erp)/planta/page.tsx");
+  const logistics = read("src/app/(erp)/logistica/page.tsx");
   const templates = read("src/app/(erp)/configuracion/plantillas/PlantillasDocumentalesClient.tsx");
 
   assert.match(quality, /loadError/);
   assert.match(quality, /loadError \? null/);
+  assert.match(plant, /loadError/);
+  assert.match(plant, /<ErrorState\b/);
+  assert.match(plant, /onRetry=\{\(\) => void refreshData\(\)\}/);
+  assert.match(logistics, /onRetry=\{\(\) => void refreshData\(\)\}/);
   assert.match(plant, /can\("planta\.ciclos\.crear"\)/);
   assert.match(templates, /formatos\.crear/);
   assert.match(templates, /formatos\.versiones\.crear/);
 });
 
+test("las vistas comerciales delegan el ámbito al contrato del recurso", () => {
+  const products = read("src/app/(erp)/comercial/productos/ProductosCatalogoClient.tsx");
+  const quoteForm = read("src/components/cotizaciones/CotizacionForm.tsx");
+
+  assert.doesNotMatch(products, /Selecciona un ámbito operativo/);
+  assert.doesNotMatch(quoteForm, /Selecciona un ámbito operativo/);
+});
+
+test("la navegación distingue el enlace activo del fondo de la barra lateral", () => {
+  const sidebar = read("src/components/Sidebar.tsx");
+
+  assert.match(sidebar, /aria-current=\{active \? "page" : undefined\}/);
+  assert.match(sidebar, /active\s*\?\s*"bg-secondary-light text-secondary/);
+  assert.doesNotMatch(sidebar, /active\s*\?\s*"bg-secondary text-white"/);
+});
+
 test("el diálogo expone su semántica y controla el foco por teclado", () => {
   const modal = read("src/components/ui/Modal.tsx");
+  const dialogA11y = read("src/components/ui/useDialogA11y.ts");
 
   assert.match(modal, /role="dialog"/);
   assert.match(modal, /aria-modal="true"/);
   assert.match(modal, /aria-labelledby=/);
-  assert.match(modal, /event\.key === "Escape"/);
-  assert.match(modal, /event\.key !== "Tab"/);
-  assert.match(modal, /previousFocus\?\.focus\(\)/);
+  assert.match(dialogA11y, /event\.key === "Escape"/);
+  assert.match(dialogA11y, /event\.key !== "Tab"/);
+  assert.match(dialogA11y, /previousFocus\?\.focus\(\)/);
+});
+
+test("los diálogos de formulario reutilizan el Modal accesible", () => {
+  for (const relativePath of [
+    "src/app/(erp)/configuracion/sellos/UploadSealDialog.tsx",
+    "src/app/(erp)/usuarios/UserDialogs.tsx",
+    "src/app/(erp)/usuarios/UserRolesDialog.tsx",
+    "src/components/logistica/RegistroEventoOrdenModal.tsx",
+  ]) {
+    assert.match(read(relativePath), /<Modal\b/);
+  }
+});
+
+test("las vistas previas a pantalla completa usan la trampa de foco compartida", () => {
+  for (const relativePath of [
+    "src/app/(erp)/logistica/page.tsx",
+    "src/app/(erp)/comercial/cotizaciones/CotizacionesClient.tsx",
+  ]) {
+    assert.match(read(relativePath), /useDialogA11y/);
+  }
 });

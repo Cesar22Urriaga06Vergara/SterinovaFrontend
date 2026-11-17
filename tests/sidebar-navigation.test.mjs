@@ -23,13 +23,23 @@ const { outputText } = ts.transpileModule(source, {
 const compiledModule = { exports: {} };
 runInNewContext(outputText, { exports: compiledModule.exports });
 
+test("las rutas operativas y documentales comprueban la capacidad específica", () => {
+  const { canAccessPath } = compiledModule.exports;
+  assert.equal(canAccessPath('/calidad', ['certificados.ver']), true);
+  assert.equal(canAccessPath('/calidad/certificados/1', ['certificados.ver']), true);
+  assert.equal(canAccessPath('/calidad/certificados/1', ['calidad.ciclos.ver']), false);
+  assert.equal(canAccessPath('/planta', ['planta.ciclos.ver']), true);
+  assert.equal(canAccessPath('/planta/ciclo/nuevo', ['planta.ordenes.ver']), false);
+  assert.equal(canAccessPath('/planta/ciclo/nuevo', ['planta.ciclos.crear']), true);
+});
+
 test("muestra rutas de módulos usando permisos RBAC en vez del rol legacy", () => {
   const sections = compiledModule.exports.navigationSections;
   const labels = sections.map((section) => section.title);
   const links = sections.flatMap((section) => section.links);
   const usersLink = links.find((link) => link.href === "/usuarios");
 
-  assert.ok(labels.includes("Maestros"));
+  assert.ok(labels.includes("Comercial"));
   assert.ok(labels.includes("Operación"));
   assert.ok(links.some((link) => link.href === "/comercial/clientes"));
   assert.ok(links.some((link) => link.href === "/comercial/productos"));
@@ -56,8 +66,36 @@ test("muestra rutas de módulos usando permisos RBAC en vez del rol legacy", () 
     getVisibleNavigationSections(["clientes.ver"])
       .flatMap((section) => section.links)
       .some((link) => link.href === "/comercial"),
-    true,
+    false,
   );
+});
+
+test("organiza tareas por sección y combina permisos sin duplicar accesos", () => {
+  const { getVisibleNavigationSections } = compiledModule.exports;
+  const permissions = ['clientes.ver', 'productos.gestionar', 'cotizaciones.ver',
+    'logistica.ordenes.ver', 'planta.ordenes.ver', 'calidad.ciclos.ver',
+    'solicitudes_anulacion.ver', 'usuarios.ver', 'formatos.ver', 'sellos.ver'];
+  const result = JSON.parse(JSON.stringify(getVisibleNavigationSections(permissions)))
+    .map(({ title, links }) => [title, links.map(({ label }) => label)]);
+  assert.deepEqual(result, [
+    ['Principal', ['Inicio']],
+    ['Comercial', ['Clientes', 'Catálogo', 'Cotizaciones']],
+    ['Operación', ['Logística', 'Planta', 'Calidad']],
+    ['Gestión', ['Solicitudes de anulación', 'Usuarios']],
+    ['Documentos', ['Plantillas', 'Sellos']],
+  ]);
+  const hrefs = getVisibleNavigationSections([...permissions, ...permissions]).flatMap(({ links }) => links.map(({ href }) => href));
+  assert.equal(hrefs.length, new Set(hrefs).size);
+});
+
+test("oculta grupos vacíos y conserva el orden para usuarios de varias áreas", () => {
+  const { getVisibleNavigationSections } = compiledModule.exports;
+  const titles = (permissions) => Array.from(getVisibleNavigationSections(permissions), ({ title }) => title);
+  assert.deepEqual(titles([]), ['Principal']);
+  assert.deepEqual(titles(['Admin']), ['Principal']);
+  assert.deepEqual(titles(['planta.ordenes.ver']), ['Principal', 'Operación']);
+  assert.deepEqual(titles(['clientes.ver', 'planta.ciclos.ver', 'sellos.ver']), ['Principal', 'Comercial', 'Operación', 'Documentos']);
+  assert.deepEqual(titles(['sellos.ver', 'planta.ciclos.ver', 'clientes.ver']), ['Principal', 'Comercial', 'Operación', 'Documentos']);
 });
 
 test("activa la ruta más específica dentro de módulos anidados", () => {

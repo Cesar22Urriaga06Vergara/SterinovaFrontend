@@ -28,11 +28,11 @@ export function UsersTable({
   canManageAssignments: boolean;
 }) {
   return (
-    <section className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+    <section className="overflow-hidden rounded-xl bg-surface shadow-sm ring-1 ring-slate-200">
       <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
-        <span className="rounded-lg bg-teal-50 p-2 text-sterinova-teal"><Users className="h-5 w-5" aria-hidden /></span>
+        <span className="rounded-lg bg-teal-50 p-2 text-secondary"><Users className="h-5 w-5" aria-hidden /></span>
         <div>
-          <h2 className="font-semibold text-sterinova-dark">Cuentas registradas</h2>
+          <h2 className="font-semibold text-surface-foreground">Cuentas registradas</h2>
           <p className="text-xs text-slate-500">{users.length} usuarios</p>
         </div>
       </div>
@@ -57,7 +57,7 @@ export function UsersTable({
               return (
                 <tr key={user.id} className="hover:bg-slate-50/70">
                   <td className="px-5 py-4">
-                    <p className="font-semibold text-sterinova-dark">{userFullName(user)}</p>
+                    <p className="font-semibold text-surface-foreground">{userFullName(user)}</p>
                     {user.cargo ? <p className="mt-0.5 text-xs text-slate-500">{user.cargo}</p> : null}
                   </td>
                   <td className="px-5 py-4 text-slate-600">{user.email}</td>
@@ -71,10 +71,10 @@ export function UsersTable({
                     <div className="flex justify-end gap-2">
                       {canManageAssignments ? <button type="button" onClick={() => onRoles(user)} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium">Roles</button> : null}
                       {canManageIdentity ? <>
-                        <button type="button" onClick={() => onEdit(user)} className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-sterinova-dark hover:bg-slate-50">
+                        <button type="button" onClick={() => onEdit(user)} className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-surface-foreground hover:bg-slate-50">
                           <Pencil className="h-3.5 w-3.5" aria-hidden /> Editar
                         </button>
-                        <button type="button" onClick={() => onChangePassword(user)} className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-sterinova-dark hover:bg-slate-50">
+                        <button type="button" onClick={() => onChangePassword(user)} className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-surface-foreground hover:bg-slate-50">
                           <KeyRound className="h-3.5 w-3.5" aria-hidden /> Restablecer acceso
                         </button>
                         <button

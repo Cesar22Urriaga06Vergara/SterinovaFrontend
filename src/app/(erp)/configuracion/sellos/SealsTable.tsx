@@ -30,9 +30,9 @@ export function SealsTable({
   return (
     <section className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
       <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
-        <span className="rounded-lg bg-teal-50 p-2 text-sterinova-teal"><BadgeCheck className="h-5 w-5" aria-hidden /></span>
+        <span className="rounded-lg bg-secondary-light p-2 text-secondary"><BadgeCheck className="h-5 w-5" aria-hidden /></span>
         <div>
-          <h2 className="font-semibold text-sterinova-dark">Catálogo de sellos</h2>
+          <h2 className="font-semibold text-surface-foreground">Catálogo de sellos</h2>
           <p className="text-xs text-slate-500">{seals.length} sellos · se usan los activos al emitir un documento</p>
         </div>
       </div>
@@ -56,9 +56,9 @@ export function SealsTable({
             ) : orderedSeals.map((seal, index) => (
               <tr key={seal.id} className="hover:bg-slate-50/70">
                 <td className="px-5 py-3">
-                  {imageUrls[seal.id] ? <Image src={imageUrls[seal.id]} alt={`Sello ${seal.nombre_norma}`} width={80} height={56} unoptimized className="h-14 w-20 rounded-md border border-slate-200 bg-white object-contain p-1" /> : <div className="flex h-14 w-20 items-center justify-center rounded-md border border-dashed border-slate-300 text-slate-400"><ImagePlus className="h-5 w-5" aria-hidden /></div>}
+                  {imageUrls[seal.id] ? <Image src={imageUrls[seal.id]} alt={`Sello ${seal.nombre_norma}`} width={80} height={56} unoptimized className="h-14 w-20 rounded-md border border-slate-200 bg-white object-contain p-1" /> : <div className="flex h-14 w-20 items-center justify-center rounded-md border border-dashed border-surface-border text-slate-400"><ImagePlus className="h-5 w-5" aria-hidden /></div>}
                 </td>
-                <td className="px-5 py-4 font-semibold text-sterinova-dark">{seal.nombre_norma}</td>
+                <td className="px-5 py-4 font-semibold text-surface-foreground">{seal.nombre_norma}</td>
                 <td className="px-5 py-4 text-slate-600">{seal.numero_licencia}</td>
                 <td className="px-5 py-4"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${seal.activo ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"}`}>{seal.activo ? "Activo" : "Inactivo"}</span></td>
                 <td className="px-5 py-4 tabular-nums text-slate-600">{seal.orden}</td>

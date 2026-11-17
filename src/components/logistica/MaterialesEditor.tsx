@@ -29,7 +29,7 @@ export function MaterialesEditor({
       disabled={disabled}
       className="space-y-4 border-t border-slate-200 pt-4"
     >
-      <legend className="px-1 text-lg font-bold text-sterinova-dark">
+      <legend className="px-1 text-lg font-bold text-surface-foreground">
         Material recibido
       </legend>
       <p className="text-sm text-slate-600">
@@ -57,7 +57,7 @@ export function MaterialesEditor({
                 onChange={(e) =>
                   update(index, { [key]: e.target.value || null })
                 }
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                className="w-full rounded-lg border border-surface-border px-3 py-2"
               />
             </label>
           ))}
@@ -74,7 +74,7 @@ export function MaterialesEditor({
               onChange={(e) =>
                 update(index, { cantidad: Number(e.target.value) })
               }
-              className="w-full rounded-lg border border-slate-300 px-3 py-2"
+              className="w-full rounded-lg border border-surface-border px-3 py-2"
             />
           </label>
           {sampleFields.map(([key, label]) => (
@@ -94,7 +94,7 @@ export function MaterialesEditor({
                       e.target.value === "" ? null : Number(e.target.value),
                   })
                 }
-                className="w-full rounded-lg border border-slate-300 px-3 py-2"
+                className="w-full rounded-lg border border-surface-border px-3 py-2"
               />
             </label>
           ))}
@@ -111,7 +111,7 @@ export function MaterialesEditor({
         type="button"
         disabled={value.length >= 200}
         onClick={() => onChange([...value, nuevoMaterial()])}
-        className="rounded-lg border border-sterinova-teal px-3 py-2 text-sm font-semibold text-sterinova-teal"
+        className="rounded-lg border border-secondary px-3 py-2 text-sm font-semibold text-secondary"
       >
         Añadir material
       </button>

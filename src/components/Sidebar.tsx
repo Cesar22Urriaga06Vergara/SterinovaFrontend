@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   BadgeCheck,
-  Briefcase,
   CheckCircle,
   Factory,
   FileText,
@@ -22,10 +21,10 @@ import {
   type NavigationIcon,
 } from "@/lib/navigation";
 import { useSession } from "@/lib/session";
+import { BrandLogo } from "@/components/BrandLogo";
 
 const icons: Record<NavigationIcon, LucideIcon> = {
   home: Home,
-  briefcase: Briefcase,
   fileText: FileText,
   truck: Truck,
   factory: Factory,
@@ -74,21 +73,20 @@ export function Sidebar({ mobileOpen, onNavigate }: SidebarProps) {
         id="erp-sidebar"
         aria-hidden={isMobileViewport && !mobileOpen}
         inert={isMobileViewport && !mobileOpen}
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col bg-sterinova-dark text-white transition-transform md:static md:z-auto md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex h-dvh w-60 shrink-0 flex-col border-r border-surface-border bg-surface text-surface-foreground transition-transform md:sticky md:top-0 md:z-auto md:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="border-b border-white/10 px-5 py-6">
-          <p className="text-lg font-bold tracking-tight">Sterinova ERP</p>
-          <p className="mt-1 text-xs text-white/80">Sistema Interno</p>
+        <div className="border-b border-surface-border px-5 py-5">
+          <BrandLogo />
         </div>
 
-        <nav aria-label="Navegación principal" className="flex flex-1 flex-col gap-5 overflow-y-auto p-3">
+        <nav aria-label="Navegación principal" className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-3 py-4">
           {sections.map(({ title, links }) => (
             <section key={title} aria-label={title}>
-              <h2 className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-white/80">
+              {title !== "Principal" ? <h2 className="px-3 pb-1.5 text-xs font-medium text-surface-subtle">
                 {title}
-              </h2>
+              </h2> : null}
               <div className="flex flex-col gap-1">
                 {links.map(({ href, label, icon }) => {
                   const Icon = icons[icon];
@@ -100,11 +98,11 @@ export function Sidebar({ mobileOpen, onNavigate }: SidebarProps) {
                       href={href}
                       onClick={onNavigate}
                       aria-current={active ? "page" : undefined}
-                      className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+                      className={`flex min-h-11 items-center gap-3 rounded-control px-3 py-2 text-sm font-medium transition-colors ${
                         active
-                          ? "bg-secondary text-white"
-                          : "text-white/80 hover:bg-white/10 hover:text-white"
-                      } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-sterinova-dark`}
+                          ? "bg-secondary-light text-secondary ring-1 ring-inset ring-secondary/15"
+                          : "text-surface-subtle hover:bg-background hover:text-surface-foreground"
+                      } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2`}
                     >
                       <Icon className="h-5 w-5 shrink-0" aria-hidden />
                       {label}

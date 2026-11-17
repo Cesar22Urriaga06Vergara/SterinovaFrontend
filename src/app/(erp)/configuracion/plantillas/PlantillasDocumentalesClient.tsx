@@ -379,10 +379,10 @@ export default function PlantillasDocumentalesClient() {
     <div className="mx-auto w-full max-w-6xl space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-sterinova-dark">
+          <h1 className="text-3xl font-bold text-surface-foreground">
             Plantillas documentales
           </h1>
-          <p className="mt-1 text-sterinova-teal">
+          <p className="mt-1 text-secondary">
             Administre versiones, textos y publicación de formatos.
           </p>
         </div>
@@ -390,7 +390,7 @@ export default function PlantillasDocumentalesClient() {
           <button
             type="button"
             onClick={startCreate}
-            className="inline-flex items-center gap-2 rounded-lg bg-sterinova-orange px-4 py-2.5 text-sm font-semibold text-white"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"
           >
             <Plus className="h-4 w-4" aria-hidden />
             Nueva plantilla
@@ -399,7 +399,7 @@ export default function PlantillasDocumentalesClient() {
       </header>
 
       {error ? (
-        <p role="alert" className="text-sm font-medium text-red-600">
+        <p role="alert" className="text-sm font-medium text-error">
           {error}
         </p>
       ) : null}
@@ -408,21 +408,21 @@ export default function PlantillasDocumentalesClient() {
         {loading ? (
           <TableState colSpan={1} message="Cargando plantillas..." loading mode="panel" />
         ) : orderedTemplates.length === 0 ? (
-          <div className="rounded-xl bg-white p-6">
+          <div className="rounded-xl bg-surface p-6">
             <p className="text-surface-subtle">No hay plantillas documentales registradas.</p>
           </div>
         ) : (
           orderedTemplates.map((format) => (
             <article
               key={format.id}
-              className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-sterinova-dark/10"
+              className="rounded-xl bg-surface p-5 shadow-sm ring-1 ring-surface-border"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-sterinova-teal">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-secondary">
                     {format.codigo} · {format.clave}
                   </p>
-                  <h2 className="mt-1 text-xl font-bold text-sterinova-dark">
+                  <h2 className="mt-1 text-xl font-bold text-surface-foreground">
                     {format.nombre}
                   </h2>
                 </div>
@@ -431,7 +431,7 @@ export default function PlantillasDocumentalesClient() {
                     <button
                       type="button"
                       onClick={() => void addVersion(format)}
-                      className="inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-sm text-sterinova-dark"
+                      className="inline-flex items-center gap-1 rounded-lg border px-3 py-2 text-sm text-surface-foreground"
                     >
                       <Plus className="h-4 w-4" aria-hidden />
                       Nueva versión
@@ -449,7 +449,7 @@ export default function PlantillasDocumentalesClient() {
                   ) : null}
                 </div>
               </div>
-              <div className="mt-4 divide-y divide-sterinova-dark/10">
+              <div className="mt-4 divide-y divide-surface-border">
                 {[...format.versiones]
                   .sort((a, b) => b.version - a.version)
                   .map((version) => (
@@ -458,15 +458,15 @@ export default function PlantillasDocumentalesClient() {
                       className="flex flex-wrap items-center justify-between gap-3 py-3"
                     >
                       <div className="flex flex-wrap items-center gap-3 text-sm">
-                        <strong className="text-sterinova-dark">
+                        <strong className="text-surface-foreground">
                           {String(version.configuracion_json.document_code ?? format.codigo)} · V
                           {String(version.configuracion_json.version_label ?? String(version.version).padStart(2, "0"))}
                         </strong>
-                        <span className="rounded-full bg-sterinova-light px-2.5 py-1 text-xs font-semibold text-sterinova-dark">
+                        <span className="rounded-full bg-background px-2.5 py-1 text-xs font-semibold text-surface-foreground">
                           {stateLabel(version.estado)}
                           {version.es_vigente ? " · Vigente" : ""}
                         </span>
-                        <span className="text-sterinova-teal">
+                        <span className="text-secondary">
                           Responsable: {version.responsable}
                         </span>
                       </div>
@@ -488,7 +488,7 @@ export default function PlantillasDocumentalesClient() {
                             onClick={() =>
                               void changeState(format.id, version, next)
                             }
-                            className="rounded-lg bg-sterinova-teal px-3 py-1.5 text-sm font-medium text-white"
+                            className="rounded-lg bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground"
                           >
                             {next === "PUBLICADA"
                               ? "Publicar"
@@ -505,8 +505,8 @@ export default function PlantillasDocumentalesClient() {
       </section>
 
       {formOpen ? (
-        <section className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-sterinova-dark/10">
-          <h2 className="text-xl font-bold text-sterinova-dark">
+        <section className="rounded-xl bg-surface p-5 shadow-sm ring-1 ring-surface-border">
+          <h2 className="text-xl font-bold text-surface-foreground">
             {editing ? "Editar versión borrador" : "Crear plantilla"}
           </h2>
           <form onSubmit={handleSubmit} className="mt-4 grid gap-4 md:grid-cols-2">
@@ -682,7 +682,7 @@ export default function PlantillasDocumentalesClient() {
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded-lg bg-sterinova-orange px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
               >
                 {saving ? "Guardando..." : "Guardar borrador"}
               </button>

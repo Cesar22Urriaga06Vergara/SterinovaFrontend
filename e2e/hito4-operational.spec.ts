@@ -1,7 +1,7 @@
 import {test,expect,type Page} from '@playwright/test';
 async function session(page:Page){
   await page.addInitScript(()=>localStorage.setItem('access_token','hito4-test-token'));
-  await page.route('http://localhost:3001/auth/me',route=>route.fulfill({json:{user:{id:1,nombre:'Prueba',rol:'Admin'},permissions:[],capabilities:[],available_scopes:[],current_scope:null}}));
+  await page.route('http://localhost:3001/auth/me',route=>route.fulfill({json:{user:{id:1,nombre:'Prueba',rol:'Admin'},permissions:['logistica.ordenes.ver','logistica.ordenes.crear','logistica.cotizaciones_disponibles.ver','planta.ordenes.ver','planta.ciclos.crear'],capabilities:[],available_scopes:[{id:2,name:'Operación',kind:'DEPARTMENT'}],current_scope:{id:2,name:'Operación',kind:'DEPARTMENT'}}}));
 }
 test('captures material lots, packaging, zero samples and N/A in a logistics order',async({page})=>{
   await session(page);
@@ -25,7 +25,7 @@ test('captures material lots, packaging, zero samples and N/A in a logistics ord
 test('registers vapor with an operational date and separate drying, without inventing air time',async({page})=>{
   await session(page);
   await page.route('http://localhost:3001/planta/protocolos',route=>route.fulfill({json:[{id:2,metodo:'VAPOR',version:1,especificaciones_json:{filas:[]}}]}));
-  await page.route('http://localhost:3001/planta/ordenes',route=>route.fulfill({json:[{id:1,metodo_esterilizacion:'VAPOR',materiales:[{descripcion:'Material',cantidad:1}]}]}));
+  await page.route('http://localhost:3001/planta/ordenes',route=>route.fulfill({json:[{id:1,metodo_esterilizacion:'VAPOR',materiales:[{id:1,descripcion:'Material',cantidad:1}]}]}));
   await page.route('http://localhost:3001/planta/ciclos',route=>route.fulfill({status:201,json:{id:1}}));
   await page.goto('/planta/ciclo/nuevo?orden_id=1');
   await expect(page.getByLabel('Método',{exact:true})).toHaveValue('VAPOR');
@@ -36,6 +36,7 @@ test('registers vapor with an operational date and separate drying, without inve
   await page.getByLabel('Tiempo de Secado (min)',{exact:true}).fill('15');
   await page.getByLabel('Control Biológico',{exact:true}).fill('Negativo');
   await page.getByLabel('Control Químico',{exact:true}).fill('Cambio de color');
+  await page.getByLabel('Cantidad procesada: Material',{exact:true}).fill('1');
   const request=page.waitForRequest(r=>r.url().endsWith('/planta/ciclos')&&r.method()==='POST');
   await page.getByRole('button',{name:'Registrar Ciclo',exact:true}).click();
   expect((await request).postDataJSON()).toMatchObject({fecha_esterilizacion:'2024-02-29',protocolo_version_id:2,tiempo_secado:15,tiempo_aireacion:null,presion:null});

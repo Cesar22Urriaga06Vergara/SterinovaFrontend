@@ -30,7 +30,7 @@ test('uses database IVA in preview, sends only the expected version and refreshe
   });
   await page.goto('/comercial/cotizaciones/nueva');
   await page.getByLabel('Seleccionar cliente').selectOption('12');
-  await page.getByPlaceholder('Servicio de esterilización EtO').fill('Servicio fiscal');
+  await page.getByPlaceholder('Descripción del producto o servicio').fill('Servicio fiscal');
   const row = page.locator('tbody tr').first();
   await row.locator('input[type=number]').nth(1).fill('100');
   await expect(page.getByText('IVA (5%)', { exact: true })).toBeVisible();

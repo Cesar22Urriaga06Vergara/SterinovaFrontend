@@ -62,7 +62,12 @@ test("inicia sesión y guarda una cotización con los siete tipos disponibles", 
     if (request.method() === "POST" && pathname === "/cotizaciones") {
       await route.fulfill({
         status: 201,
-        json: { id: 42, consecutivo: "COT-CEMFA-0001" },
+        json: {
+          id: 42,
+          consecutivo: "COT-CEMFA-0001",
+          version: 1,
+          items: [{ id: 91 }],
+        },
       });
       return;
     }
@@ -76,13 +81,13 @@ test("inicia sesión y guarda una cotización con los siete tipos disponibles", 
   });
 
   await page.goto("/login");
-  await page.getByLabel("Email").fill("ana@example.com");
-  await page.getByLabel("Contraseña").fill("e2e-password");
+  await page.getByLabel("Correo electrónico").fill("ana@example.com");
+  await page.getByLabel("Contraseña", { exact: true }).fill("e2e-password");
   await page.getByRole("button", { name: /Ingresar/ }).click();
 
   await expect(page).toHaveURL("/");
   await expect(
-    page.getByRole("heading", { name: /Bienvenido, Ana/ }),
+    page.getByRole("heading", { name: "Inicio", exact: true }),
   ).toBeVisible();
 
   await page.goto("/comercial/cotizaciones/nueva");
@@ -109,7 +114,7 @@ test("inicia sesión y guarda una cotización con los siete tipos disponibles", 
   await serviceType.selectOption("FARMACEUTICO");
   await page.getByLabel("Seleccionar cliente").selectOption("12");
   await page
-    .getByPlaceholder("Servicio de esterilización EtO")
+    .getByPlaceholder("Descripción del producto o servicio")
     .fill("Prueba de esterilización");
   await page.getByRole("button", { name: "Guardar Cotización" }).click();
 

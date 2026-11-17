@@ -1,4 +1,5 @@
 import { useId, useState, type FormEvent } from "react";
+import { Modal } from "@/components/ui/Modal";
 import type { UserForm, UserRecord } from "./types";
 import { userFullName } from "./types";
 import type { Role, Scope } from "./UserRolesDialog";
@@ -26,14 +27,18 @@ export function UserFormDialog({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/50 p-4" role="presentation">
-      <section className="my-auto w-full max-w-2xl rounded-2xl bg-white shadow-xl" role="dialog" aria-modal="true" aria-labelledby="user-form-title">
-        <div className="border-b border-slate-100 px-6 py-5">
-          <h2 id="user-form-title" className="text-xl font-bold text-sterinova-dark">{editing ? "Editar usuario" : "Nuevo usuario"}</h2>
-          <p className="mt-1 text-sm text-slate-500">Los datos de contacto se utilizan en la identificación del responsable.</p>
-        </div>
-        <form noValidate onSubmit={onSubmit} className="space-y-5 px-6 py-5">
-          <div className="grid gap-4 sm:grid-cols-2">
+    <Modal
+      open
+      title={editing ? "Editar usuario" : "Nuevo usuario"}
+      description="Los datos de contacto se utilizan en la identificación del responsable."
+      onClose={() => {
+        if (!saving) onClose();
+      }}
+      size="lg"
+      closeOnBackdrop={false}
+    >
+      <form noValidate onSubmit={onSubmit} className="space-y-5">
+        <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Nombre" required maxLength={255} error={errors.nombre} value={form.nombre} onChange={(value) => onFormChange({ ...form, nombre: value }, "nombre")} />
             <Field label="Apellido" maxLength={255} value={form.apellido ?? ""} onChange={(value) => onFormChange({ ...form, apellido: value })} />
             <Field label="Cargo" maxLength={255} value={form.cargo ?? ""} onChange={(value) => onFormChange({ ...form, cargo: value })} />
@@ -59,12 +64,11 @@ export function UserFormDialog({
           </div>
           {pageError ? <p role="alert" className="text-sm text-red-700">{pageError}</p> : null}
           <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
-            <button type="button" onClick={onClose} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Cancelar</button>
-            <button type="submit" disabled={saving} className="rounded-lg bg-sterinova-dark px-4 py-2 text-sm font-semibold text-white hover:bg-sterinova-teal disabled:opacity-60">{saving ? "Guardando…" : editing ? "Guardar cambios" : "Crear usuario"}</button>
+            <button type="button" onClick={onClose} className="rounded-lg border border-surface-border px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Cancelar</button>
+            <button type="submit" disabled={saving} className="rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground hover:bg-secondary-hover disabled:opacity-60">{saving ? "Guardando…" : editing ? "Guardar cambios" : "Crear usuario"}</button>
           </div>
-        </form>
-      </section>
-    </div>
+      </form>
+    </Modal>
   );
 }
 
@@ -89,29 +93,31 @@ export function ResetAccessDialog({
   const [copied, setCopied] = useState(false);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4" role="presentation">
-      <section className="w-full max-w-md rounded-2xl bg-white shadow-xl" role="dialog" aria-modal="true" aria-labelledby="password-title">
-        <form noValidate onSubmit={onSubmit} className="space-y-5 p-6">
-          <div>
-            <h2 id="password-title" className="text-xl font-bold text-sterinova-dark">Restablecer acceso</h2>
-            <p className="mt-1 text-sm text-slate-500">Cuenta: {userFullName(user)}</p>
-          </div>
+    <Modal
+      open
+      title="Restablecer acceso"
+      description={`Cuenta: ${userFullName(user)}`}
+      onClose={() => {
+        if (!saving) onClose();
+      }}
+      closeOnBackdrop={false}
+    >
+      <form noValidate onSubmit={onSubmit} className="space-y-5">
           {password ? <>
             <label className="block text-sm font-medium text-slate-700" htmlFor="password-reset-link">Enlace de un solo uso</label>
-            <input id="password-reset-link" readOnly value={password} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+            <input id="password-reset-link" readOnly value={password} className="w-full rounded-lg border border-surface-border px-3 py-2 text-sm" />
             <p className="text-sm text-slate-600">Caduca en 15 minutos. Compártelo con la persona por un canal seguro; no vuelve a mostrarse al cerrar este diálogo.</p>
-            <button type="button" onClick={() => void navigator.clipboard.writeText(password).then(() => { setCopied(true); setCopyError(""); }).catch(() => setCopyError("No se pudo copiar. Selecciona y copia el enlace manualmente."))} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium">{copied ? "Copiado" : "Copiar enlace"}</button>
+            <button type="button" onClick={() => void navigator.clipboard.writeText(password).then(() => { setCopied(true); setCopyError(""); }).catch(() => setCopyError("No se pudo copiar. Selecciona y copia el enlace manualmente."))} className="rounded-lg border border-surface-border px-3 py-2 text-sm font-medium">{copied ? "Copiado" : "Copiar enlace"}</button>
           </> : <p className="text-sm text-slate-600">Se generará un enlace aleatorio de un solo uso. La persona establecerá su propia contraseña.</p>}
           {passwordError ? <p role="alert" className="text-sm text-red-700">{passwordError}</p> : null}
           {pageError ? <p role="alert" className="text-sm text-red-700">{pageError}</p> : null}
           {copyError ? <p role="alert" className="text-sm text-red-700">{copyError}</p> : null}
           <div className="flex justify-end gap-3">
-            <button type="button" onClick={onClose} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700">Cancelar</button>
-            {!password ? <button type="submit" disabled={saving} className="rounded-lg bg-sterinova-dark px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">{saving ? "Generando…" : "Generar enlace"}</button> : null}
+            <button type="button" onClick={onClose} className="rounded-lg border border-surface-border px-4 py-2 text-sm font-medium text-slate-700">Cancelar</button>
+            {!password ? <button type="submit" disabled={saving} className="rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground disabled:opacity-60">{saving ? "Generando…" : "Generar enlace"}</button> : null}
           </div>
-        </form>
-      </section>
-    </div>
+      </form>
+    </Modal>
   );
 }
 
@@ -148,7 +154,7 @@ function Field({
         aria-invalid={Boolean(error)}
         aria-describedby={error ? errorId : undefined}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 outline-none focus:border-sterinova-teal focus:ring-2 focus:ring-sterinova-teal/20"
+        className="w-full rounded-lg border border-surface-border bg-surface px-3 py-2.5 outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/30"
       />
       {error ? <span id={errorId} role="alert" className="mt-1 block text-xs text-red-700">{error}</span> : null}
     </label>

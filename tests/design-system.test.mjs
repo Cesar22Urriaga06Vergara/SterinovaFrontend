@@ -28,6 +28,7 @@ test("los átomos UI declaran sus variantes y estados accesibles", () => {
   const select = read("src/components/ui/Select.tsx");
   const badge = read("src/components/ui/Badge.tsx");
   const modal = read("src/components/ui/Modal.tsx");
+  const dialogA11y = read("src/components/ui/useDialogA11y.ts");
 
   for (const variant of ["primary", "secondary", "danger", "ghost"]) {
     assert.match(button, new RegExp(`${variant}:`));
@@ -44,9 +45,9 @@ test("los átomos UI declaran sus variantes y estados accesibles", () => {
     assert.match(badge, new RegExp(`${variant}:`));
   }
   assert.match(modal, /aria-modal="true"/);
-  assert.match(modal, /document\.body\.style\.overflow/);
-  assert.match(modal, /Escape/);
-  assert.match(modal, /focus/);
+  assert.match(dialogA11y, /document\.body\.style\.overflow/);
+  assert.match(dialogA11y, /Escape/);
+  assert.match(dialogA11y, /focus/);
 });
 
 test("las vistas piloto reutilizan los componentes del sistema visual", () => {

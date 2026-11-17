@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BadgeCheck, CheckCircle2, Download, Eye, Plus, Send, X } from "lucide-react";
 import { api, downloadPdfFromBackend } from "@/lib/api";
+import { formatDate } from "@/lib/format";
 import {
   Cotizacion,
   isEditableDraft,
@@ -18,6 +19,7 @@ import { useSession, useQuoteHeaders } from "@/lib/session";
 import { useStoredUser } from "@/lib/stored-user-hook";
 import { SolicitudAnulacionButton } from "@/components/SolicitudAnulacionButton";
 import { TableState } from "@/components/ui/states/TableState";
+import { useDialogA11y } from "@/components/ui/useDialogA11y";
 
 type CotizacionPreview = { source: Cotizacion; data: Cotizacion; metadata: PdfFormatMetadata };
 
@@ -27,11 +29,6 @@ function isEmitted(cotizacion: Cotizacion) {
       cotizacion.pdf_url ||
       cotizacion.estado?.toUpperCase() === "EMITIDA",
   );
-}
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("es-CO");
 }
 
 export default function CotizacionesPage() {
@@ -46,6 +43,10 @@ export default function CotizacionesPage() {
   const [approvingId, setApprovingId] = useState<number | null>(null);
   const [emittingId, setEmittingId] = useState<number | null>(null);
   const [previewCotizacion, setPreviewCotizacion] = useState<CotizacionPreview | null>(null);
+  const previewDialogRef = useDialogA11y({
+    open: Boolean(previewCotizacion),
+    onClose: () => setPreviewCotizacion(null),
+  });
 
   async function loadCotizaciones() {
     setLoading(true);
@@ -170,14 +171,14 @@ export default function CotizacionesPage() {
       <div className="mx-auto w-full max-w-6xl space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-sterinova-dark">Cotizaciones</h1>
-            <p className="mt-1 text-sterinova-teal">
+            <h1 className="text-h3 text-surface-foreground">Cotizaciones</h1>
+            <p className="mt-1 text-body text-surface-subtle">
               Aprueba y emite documentos oficiales para las órdenes de logística.
             </p>
           </div>
           {can("cotizaciones.crear") && <Link
             href="/comercial/cotizaciones/nueva"
-            className="inline-flex items-center gap-2 rounded-lg bg-sterinova-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
+            className="inline-flex items-center gap-2 rounded-control bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             <Plus className="h-4 w-4" aria-hidden />
             Nueva Cotización
@@ -185,31 +186,31 @@ export default function CotizacionesPage() {
         </div>
 
         {error ? (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700" role="alert">
+          <p className="rounded-control bg-error-light px-4 py-3 text-sm font-medium text-error-foreground" role="alert">
             {error}
           </p>
         ) : null}
         {success ? (
-          <p className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800" role="status">
+          <p className="flex items-center gap-2 rounded-control bg-success-light px-4 py-3 text-sm font-semibold text-success-foreground" role="status">
             <BadgeCheck className="h-4 w-4 shrink-0" aria-hidden /> {success}
           </p>
         ) : null}
 
-        <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-sterinova-dark/10">
+        <div className="overflow-hidden rounded-card border border-surface-border bg-surface shadow-sm">
           <div className="overflow-x-auto">
-            <table className="min-w-225 w-full divide-y divide-sterinova-dark/10 text-left text-sm">
-              <thead className="bg-sterinova-light text-sterinova-dark">
+            <table className="min-w-225 w-full divide-y divide-surface-border text-left text-body">
+              <thead className="bg-background text-surface-foreground">
                 <tr>
-                  <th className="px-4 py-3 font-semibold">Consecutivo</th>
-                  <th className="px-4 py-3 font-semibold">Cliente</th>
-                  <th className="px-4 py-3 font-semibold">Tipo</th>
-                  <th className="px-4 py-3 font-semibold">Fecha</th>
-                  <th className="px-4 py-3 font-semibold">Estado</th>
-                  <th className="px-4 py-3 font-semibold">Total</th>
-                  <th className="px-4 py-3 font-semibold">Acciones</th>
+                  <th className="px-4 py-3 text-caption font-semibold uppercase tracking-wide">Consecutivo</th>
+                  <th className="px-4 py-3 text-caption font-semibold uppercase tracking-wide">Cliente</th>
+                  <th className="px-4 py-3 text-caption font-semibold uppercase tracking-wide">Tipo</th>
+                  <th className="px-4 py-3 text-caption font-semibold uppercase tracking-wide">Fecha</th>
+                  <th className="px-4 py-3 text-caption font-semibold uppercase tracking-wide">Estado</th>
+                  <th className="px-4 py-3 text-caption font-semibold uppercase tracking-wide">Total</th>
+                  <th className="px-4 py-3 text-caption font-semibold uppercase tracking-wide">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-sterinova-dark/5">
+              <tbody className="divide-y divide-surface-border/60">
                 {loading ? (
                   <TableState colSpan={7} message="Cargando cotizaciones..." loading />
                 ) : cotizaciones.length === 0 ? (
@@ -217,27 +218,27 @@ export default function CotizacionesPage() {
                 ) : cotizaciones.map((cotizacion) => {
                   const emitted = isEmitted(cotizacion);
                   return (
-                    <tr key={cotizacion.id} className="text-sterinova-dark">
+                    <tr key={cotizacion.id} className="text-surface-foreground transition-colors hover:bg-background/60">
                       <td className="px-4 py-3 font-medium">{cotizacion.consecutivo}</td>
                       <td className="px-4 py-3">{cotizacion.cliente?.razon_social ?? `#${cotizacion.cliente_id}`}</td>
                       <td className="px-4 py-3">{labelTipoServicio(cotizacion.tipo_servicio)}</td>
                       <td className="px-4 py-3">{formatDate(cotizacion.fecha)}</td>
                       <td className="px-4 py-3">
-                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${emitted ? "bg-emerald-100 text-emerald-800" : cotizacion.estado === "APROBADA" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}>
+                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${emitted ? "bg-success-light text-success-foreground" : cotizacion.estado === "APROBADA" ? "bg-success-light text-success-foreground" : "bg-warning-light text-warning-foreground"}`}>
                           {emitted ? "EMITIDA" : cotizacion.estado}
                         </span>
                       </td>
                       <td className="px-4 py-3">{formatCurrency(cotizacion.total)}</td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-2">
-                          {can("cotizaciones.editar") && isEditableDraft(cotizacion) && <Link href={`/comercial/cotizaciones/${cotizacion.id}/editar`} className="rounded-lg border px-2.5 py-1.5 text-xs font-medium">Editar</Link>}
+                          {can("cotizaciones.editar") && isEditableDraft(cotizacion) && <Link href={`/comercial/cotizaciones/${cotizacion.id}/editar`} className="rounded-control border border-surface-border px-2.5 py-1.5 text-xs font-medium text-surface-foreground transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">Editar</Link>}
                           {!emitted ? (
                             <>
                               {can("cotizaciones.emitir") && isInternallyApproved(cotizacion) && <button
                                 type="button"
                                 onClick={() => void handleEmitir(cotizacion)}
                                 disabled={emittingId !== null || downloadingId !== null}
-                                className="inline-flex items-center gap-1.5 rounded-lg bg-sterinova-dark px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-sterinova-teal disabled:opacity-60"
+                                className="inline-flex items-center gap-1.5 rounded-control bg-secondary px-2.5 py-1.5 text-xs font-semibold text-secondary-foreground transition-colors hover:bg-secondary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                               >
                                 <Send className="h-3.5 w-3.5" aria-hidden />
                                 {emittingId === cotizacion.id ? "Emitiendo..." : "Emitir Cotización"}
@@ -246,7 +247,7 @@ export default function CotizacionesPage() {
                                 type="button"
                                 onClick={() => void handlePreview(cotizacion)}
                                 disabled={downloadingId !== null || emittingId !== null}
-                                className="inline-flex items-center gap-1.5 rounded-lg border border-sterinova-dark/15 px-2.5 py-1.5 text-xs font-medium text-sterinova-dark hover:bg-sterinova-light disabled:opacity-60"
+                                className="inline-flex items-center gap-1.5 rounded-control border border-surface-border px-2.5 py-1.5 text-xs font-medium text-surface-foreground transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                               >
                                 <Eye className="h-3.5 w-3.5" aria-hidden />
                                 {downloadingId === cotizacion.id ? "Abriendo..." : "Ver Borrador"}
@@ -257,7 +258,7 @@ export default function CotizacionesPage() {
                               type="button"
                               onClick={() => void handleOfficialDownload(cotizacion)}
                               disabled={downloadingId !== null}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-700/25 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-60"
+                              className="inline-flex items-center gap-1.5 rounded-control bg-success-light px-2.5 py-1.5 text-xs font-semibold text-success-foreground ring-1 ring-success/25 transition-colors hover:bg-success/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                               <Download className="h-3.5 w-3.5" aria-hidden />
                               {downloadingId === cotizacion.id ? "Descargando..." : "Descargar PDF Oficial"}
@@ -269,7 +270,7 @@ export default function CotizacionesPage() {
                               type="button"
                               onClick={() => void handleAprobar(cotizacion)}
                               disabled={approvingId !== null || emittingId !== null}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-green-600/30 px-2.5 py-1.5 text-xs font-medium text-green-700 hover:bg-green-50 disabled:opacity-60"
+                              className="inline-flex items-center gap-1.5 rounded-control border border-success/30 px-2.5 py-1.5 text-xs font-medium text-success transition-colors hover:bg-success-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                               <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
                               {approvingId === cotizacion.id ? "Aprobando..." : "Aprobar"}
@@ -287,27 +288,34 @@ export default function CotizacionesPage() {
       </div>
 
       {previewCotizacion ? (
-        <div className="fixed inset-0 z-50 flex flex-col bg-slate-950/70 p-3 sm:p-6" role="dialog" aria-modal="true" aria-label={`Vista previa ${previewCotizacion.data.consecutivo}`}>
-          <div className="mx-auto flex w-full max-w-6xl items-center justify-between rounded-t-xl bg-white px-4 py-3 shadow">
+        <div
+          ref={previewDialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="quote-preview-title"
+          tabIndex={-1}
+          className="fixed inset-0 z-50 flex flex-col bg-slate-950/70 p-3 sm:p-6"
+        >
+          <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-2 rounded-t-xl bg-surface px-4 py-3 shadow">
             <div>
-              <h2 className="font-semibold text-sterinova-dark">Borrador · {previewCotizacion.data.consecutivo}</h2>
-              <p className="text-xs text-slate-500">Vista previa. El PDF oficial se fija al emitir.</p>
+              <h2 id="quote-preview-title" className="font-semibold text-surface-foreground">Borrador · {previewCotizacion.data.consecutivo}</h2>
+              <p className="text-xs text-surface-subtle">Vista previa. El PDF oficial se fija al emitir.</p>
             </div>
             <button
               type="button"
               onClick={() => window.print()}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-sterinova-dark/15 px-3 py-2 text-sm font-medium text-sterinova-dark hover:bg-sterinova-light"
+              className="inline-flex items-center gap-1.5 rounded-control border border-surface-border px-3 py-2 text-sm font-medium text-surface-foreground transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
               <Download className="h-4 w-4" aria-hidden />
               Exportar PDF
             </button>
-            {can("cotizaciones.editar") && isEditableDraft(previewCotizacion.source) && <Link href={`/comercial/cotizaciones/${previewCotizacion.source.id}/editar`} className="rounded border px-3 py-2">Editar</Link>}
+            {can("cotizaciones.editar") && isEditableDraft(previewCotizacion.source) && <Link href={`/comercial/cotizaciones/${previewCotizacion.source.id}/editar`} className="rounded-control border border-surface-border px-3 py-2 text-sm font-medium text-surface-foreground transition-colors hover:bg-background">Editar</Link>}
             <SolicitudAnulacionButton cotizacion={previewCotizacion.source} onSuccess={(message) => { setSuccess(message); setPreviewCotizacion(null); }} />
-            <button type="button" onClick={() => setPreviewCotizacion(null)} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100" aria-label="Cerrar vista previa">
+            <button type="button" onClick={() => setPreviewCotizacion(null)} className="rounded-control p-2 text-surface-subtle transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label="Cerrar vista previa">
               <X className="h-5 w-5" aria-hidden />
             </button>
           </div>
-          <div className="flex-1 overflow-auto rounded-b-xl bg-slate-200 p-4">
+          <div className="flex-1 overflow-auto rounded-b-xl bg-background p-4">
             <div className="pdf-print-root pdf-preview-root mx-auto w-fit shadow-lg">
           <CotizacionPDF data={previewCotizacion.data} metadata={previewCotizacion.metadata} creatorMode="preview" />
             </div>

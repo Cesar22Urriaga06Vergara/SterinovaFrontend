@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { Modal } from "@/components/ui/Modal";
 import type { OrdenServicio } from "@/lib/logistica-types";
 
 export type EstadoEventoOrden =
@@ -82,23 +83,17 @@ export function RegistroEventoOrdenModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-sterinova-dark/50 p-4">
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="acta-event-title"
-        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white p-5 shadow-xl"
-      >
-        <h2
-          id="acta-event-title"
-          className="text-xl font-bold text-sterinova-dark"
-        >
-          Registrar {eventLabels[estado]} · {orden.consecutivo}
-        </h2>
-        <p className="mt-1 text-sm text-sterinova-teal">
-          La fecha y hora se registrarán al guardar este evento.
-        </p>
-        <form onSubmit={submit} className="mt-4 space-y-4">
+    <Modal
+      open
+      title={`Registrar ${eventLabels[estado]} · ${orden.consecutivo}`}
+      description="La fecha y hora se registrarán al guardar este evento."
+      onClose={() => {
+        if (!saving) onClose();
+      }}
+      size="xl"
+      closeOnBackdrop={false}
+    >
+      <form onSubmit={submit} className="space-y-4">
           <label className="block text-sm">
             <span className="mb-1 block font-medium">Responsable del evento</span>
             <input
@@ -229,20 +224,19 @@ export function RegistroEventoOrdenModal({
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="rounded-lg px-4 py-2 text-sm font-medium text-sterinova-dark hover:bg-sterinova-light"
+              className="rounded-lg px-4 py-2 text-sm font-medium text-surface-foreground hover:bg-background"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={saving || !orden.materiales?.length}
-              className="rounded-lg bg-sterinova-orange px-4 py-2 text-sm font-semibold text-white disabled:opacity-70"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-70"
             >
               {saving ? "Guardando..." : "Registrar evento"}
             </button>
           </div>
         </form>
-      </section>
-    </div>
+    </Modal>
   );
 }

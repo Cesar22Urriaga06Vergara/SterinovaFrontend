@@ -175,12 +175,9 @@ export default function ClientesPage() {
     <div className="mx-auto w-full max-w-6xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-sterinova-dark">Clientes</h1>
-          <p className="mt-1 text-sterinova-teal">
+          <h1 className="text-h3 text-surface-foreground">Clientes</h1>
+          <p className="mt-1 text-body text-surface-subtle">
             Listado de clientes del módulo comercial.
-          </p>
-          <p className="mt-1 text-xs text-sterinova-teal">
-            Excel: CLIENTE (razón social), ID (NIT), contacto, teléfono, email y dirección.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -194,7 +191,8 @@ export default function ClientesPage() {
           <Button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            variant="secondary"
+            variant="ghost"
+            title="Columnas de Excel: CLIENTE (razón social), ID (NIT), contacto, teléfono, email y dirección."
             loading={importing}
             loadingLabel="Importando..."
           >
@@ -212,18 +210,18 @@ export default function ClientesPage() {
       </div>
 
       {success ? (
-        <p className="text-sm font-medium text-success" role="status">
+        <p className="rounded-control bg-success-light px-4 py-3 text-sm font-medium text-success-foreground" role="status">
           {success}
         </p>
       ) : null}
 
       {error ? (
-        <p className="text-sm font-medium text-error" role="alert">
+        <p className="rounded-control bg-error-light px-4 py-3 text-sm font-medium text-error-foreground" role="alert">
           {error}
         </p>
       ) : null}
       {listError && clientes.length > 0 ? (
-        <p className="text-sm font-medium text-error" role="alert">
+        <p className="rounded-control bg-error-light px-4 py-3 text-sm font-medium text-error-foreground" role="alert">
           {listError}
         </p>
       ) : null}
@@ -242,22 +240,23 @@ export default function ClientesPage() {
           }}
         />
       ) : (
-        <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-sterinova-dark/10">
-          <table className="min-w-full divide-y divide-sterinova-dark/10 text-left text-sm">
-            <thead className="bg-sterinova-light text-sterinova-dark">
+        <div className="overflow-hidden rounded-card border border-surface-border bg-surface shadow-sm">
+          <div className="overflow-x-auto">
+          <table className="min-w-[900px] w-full divide-y divide-surface-border text-left text-body">
+            <thead className="bg-background text-surface-foreground">
               <tr>
-                <th className="px-4 py-3 font-semibold">ID</th>
-                <th className="px-4 py-3 font-semibold">Razón Social</th>
-                <th className="px-4 py-3 font-semibold">NIT</th>
-                <th className="px-4 py-3 font-semibold">Contacto</th>
-                <th className="px-4 py-3 font-semibold">Teléfono</th>
-                <th className="px-4 py-3 font-semibold">Email</th>
-                <th className="px-4 py-3 font-semibold">Acciones</th>
+                <th className="px-4 py-3 text-caption font-semibold uppercase tracking-wide">ID</th>
+                <th className="px-4 py-3 text-caption font-semibold uppercase tracking-wide">Razón Social</th>
+                <th className="px-4 py-3 text-caption font-semibold uppercase tracking-wide">NIT</th>
+                <th className="px-4 py-3 text-caption font-semibold uppercase tracking-wide">Contacto</th>
+                <th className="px-4 py-3 text-caption font-semibold uppercase tracking-wide">Teléfono</th>
+                <th className="px-4 py-3 text-caption font-semibold uppercase tracking-wide">Email</th>
+                <th className="px-4 py-3 text-caption font-semibold uppercase tracking-wide">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-sterinova-dark/5">
+            <tbody className="divide-y divide-surface-border/60">
               {clientes.map((cliente) => (
-                <tr key={cliente.id} className="text-sterinova-dark">
+                <tr key={cliente.id} className="text-surface-foreground transition-colors hover:bg-background/60">
                   <td className="px-4 py-3">{cliente.id}</td>
                   <td className="px-4 py-3 font-medium">{cliente.razon_social}</td>
                   <td className="px-4 py-3">{cliente.nit}</td>
@@ -294,6 +293,7 @@ export default function ClientesPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

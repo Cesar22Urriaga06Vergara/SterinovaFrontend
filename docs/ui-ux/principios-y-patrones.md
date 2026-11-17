@@ -51,7 +51,7 @@ El fragmento ilustra la jerarquía de estados; reemplaza los valores de ejemplo 
 - Antes de crear un control nuevo, comprueba si existe en `src/components/ui/` y reutiliza sus props y estados.
 - Si el patrón será compartido, implementa el componente en `src/components/ui/`, añade ejemplos y props a [Design System](design-system.md), y úsalo desde una vista piloto.
 - Usa los tokens semánticos del Design System para color, tipografía, radios, foco y superficies; no introduzcas valores de marca repetidos en componentes.
-- Reutiliza `LoadingState`, `ErrorState`, `EmptyState` y `ToastProvider` para comunicar espera, fallos recuperables, ausencia de datos y confirmaciones.
+- Reutiliza `LoadingState`, `ErrorState`, `EmptyState`, `TableState`, `Card`, `PageHeader` y `ToastProvider` para comunicar contención, espera, fallos recuperables, ausencia de datos y confirmaciones.
 - Conserva las etiquetas y términos de negocio del módulo; las alertas deben explicar el problema y la acción disponible.
 
 ## Accesibilidad y calidad

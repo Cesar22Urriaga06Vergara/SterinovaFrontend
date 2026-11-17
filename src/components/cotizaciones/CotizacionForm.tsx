@@ -8,6 +8,7 @@ import { api } from "@/lib/api";
 import axios from "axios";
 import { ivaLabel, quoteAmounts, type IvaVersion } from "@/lib/iva";
 import { LoadingState } from "@/components/ui/states/LoadingState";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { notifyToast } from "@/components/ui/states/toast-events";
 import type { Cliente } from "@/lib/cliente-types";
@@ -92,7 +93,7 @@ function createEmptyItem(): DraftItem {
 export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
   const router = useRouter();
   const sessionUser = useStoredUser();
-  const { can, current_scope } = useSession();
+  const { can } = useSession();
   const headers = useQuoteHeaders();
   const allowed = can(quoteId ? "cotizaciones.editar" : "cotizaciones.crear");
   const [version, setVersion] = useState<number | null>(null);
@@ -354,7 +355,7 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (submitLock.current || !tax || !allowed || !ready || conflict || (quoteId ? version == null : !current_scope || current_scope.kind === "GLOBAL")) return;
+    if (submitLock.current || !tax || !allowed || !ready || conflict || (quoteId && version == null)) return;
     setError("");
 
     if (!clienteId) {
@@ -470,41 +471,35 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
     }
   }
 
-  if (!quoteId && (!current_scope || current_scope.kind === "GLOBAL")) return <p role="alert">Selecciona un ámbito operativo para crear la cotización.</p>;
-
   if (!allowed || (quoteId && !ready && !error) || loading) {
     return <LoadingState label="Cargando formulario de cotización..." />;
   }
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-sterinova-dark">
-          {quoteId ? "Editar Cotizaci\u00f3n" : "Nueva Cotizaci\u00f3n"}
-        </h1>
-        <p className="mt-1 text-sterinova-teal">
-          Formato comercial Sterinova — 7 tipos de servicio.
-        </p>
-      </div>
+      <PageHeader
+        title={quoteId ? "Editar Cotización" : "Nueva Cotización"}
+        description="Formato comercial Sterinova — 7 tipos de servicio."
+      />
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {!quoteId && <p role="status" className="rounded-lg border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-sterinova-dark">
+        {!quoteId && <p role="status" className="rounded-lg border border-secondary/30 bg-secondary-light px-4 py-3 text-sm text-surface-foreground">
           Responsable de esta cotización: <strong>{[sessionUser?.nombre, sessionUser?.apellido].filter(Boolean).join(" ") || sessionUser?.email || "Usuario autenticado"}</strong>
           {sessionUser?.cargo ? ` · ${sessionUser.cargo}` : ""}. El sistema la asociará automáticamente a esta cuenta.
         </p>}
-        <section className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-sterinova-dark/10">
-          <h2 className="text-lg font-semibold text-sterinova-dark">
+        <section className="rounded-xl bg-surface p-5 shadow-sm ring-1 ring-surface-border">
+          <h2 className="text-lg font-semibold text-surface-foreground">
             1. Cliente
           </h2>
           <label className="mt-3 block text-sm">
-            <span className="mb-1 block font-medium text-sterinova-dark">
+            <span className="mb-1 block font-medium text-surface-foreground">
               Seleccionar cliente
             </span>
             <select
               required
               value={clienteId}
               onChange={(e) => setClienteId(e.target.value)}
-              className="w-full rounded-lg border border-sterinova-dark/20 bg-sterinova-light px-3 py-2 text-sterinova-dark outline-none focus:border-sterinova-teal focus:ring-2 focus:ring-sterinova-teal/30"
+              className="w-full rounded-lg border border-surface-border bg-background px-3 py-2 text-surface-foreground outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/30"
             >
               <option value="">Seleccione...</option>
               {clientes.map((cliente) => (
@@ -517,11 +512,11 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
 
           <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
             {clientes.length === 0 ? (
-              <span className="text-sterinova-dark/70">
+              <span className="text-surface-subtle">
                 No hay clientes disponibles.
               </span>
             ) : (
-              <span className="text-sterinova-dark/70">
+              <span className="text-surface-subtle">
                 ¿No encuentra al cliente?
               </span>
             )}
@@ -529,7 +524,7 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
               href="/comercial/clientes"
               target="_blank"
               rel="noreferrer"
-              className="font-semibold text-sterinova-teal underline"
+              className="font-semibold text-secondary underline"
             >
               Gestionar clientes
             </Link>
@@ -538,14 +533,14 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
               onClick={() => void refreshClientes()}
               disabled={refreshing}
               aria-busy={refreshing}
-              className="font-semibold text-sterinova-teal underline disabled:cursor-not-allowed disabled:opacity-60"
+              className="font-semibold text-secondary underline disabled:cursor-not-allowed disabled:opacity-60"
             >
               {refreshing ? "Actualizando..." : "Actualizar lista"}
             </button>
           </div>
 
           {selectedCliente ? (
-            <div className="mt-4 grid gap-2 rounded-lg bg-sterinova-light p-4 text-sm text-sterinova-dark sm:grid-cols-2">
+            <div className="mt-4 grid gap-2 rounded-lg bg-background p-4 text-sm text-surface-foreground sm:grid-cols-2">
               <p>
                 <span className="font-semibold">NIT:</span> {selectedCliente.nit}
               </p>
@@ -569,12 +564,12 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
           ) : null}
         </section>
 
-        <section className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-sterinova-dark/10">
-          <h2 className="text-lg font-semibold text-sterinova-dark">
+        <section className="rounded-xl bg-surface p-5 shadow-sm ring-1 ring-surface-border">
+          <h2 className="text-lg font-semibold text-surface-foreground">
             2. Configuración
           </h2>
           <label className="mt-3 block text-sm">
-            <span className="mb-1 block font-medium text-sterinova-dark">
+            <span className="mb-1 block font-medium text-surface-foreground">
               Tipo de cotización
             </span>
             <select
@@ -582,7 +577,7 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
               onChange={(e) =>
                 changeTipoServicio(e.target.value as TipoServicioCotizacion)
               }
-              className="w-full rounded-lg border border-sterinova-dark/20 bg-sterinova-light px-3 py-2 text-sterinova-dark outline-none focus:border-sterinova-teal focus:ring-2 focus:ring-sterinova-teal/30"
+              className="w-full rounded-lg border border-surface-border bg-background px-3 py-2 text-surface-foreground outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/30"
             >
               {TIPOS_SERVICIO.map((tipo) => (
                 <option key={tipo.value} value={tipo.value}>
@@ -593,17 +588,17 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
           </label>
         </section>
 
-        <section className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-sterinova-dark/10">
-          <h2 className="text-lg font-semibold text-sterinova-dark">
+        <section className="rounded-xl bg-surface p-5 shadow-sm ring-1 ring-surface-border">
+          <h2 className="text-lg font-semibold text-surface-foreground">
             3. Condiciones comerciales
           </h2>
-          <p className="mt-1 text-sm text-sterinova-teal">
+          <p className="mt-1 text-sm text-secondary">
             Puedes guardar el borrador y completar estos datos antes de solicitar aprobación.
           </p>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {COMMERCIAL_CONDITIONS.map(([label, field]) => (
               <label key={field} className="block text-sm">
-                <span className="mb-1 block font-medium text-sterinova-dark">
+                <span className="mb-1 block font-medium text-surface-foreground">
                   {label}
                 </span>
                 <textarea
@@ -612,33 +607,33 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
                   onChange={(event) =>
                     updateCommercialCondition(field, event.target.value)
                   }
-                  className="w-full rounded-lg border border-sterinova-dark/20 bg-sterinova-light px-3 py-2 text-sterinova-dark outline-none focus:border-sterinova-teal focus:ring-2 focus:ring-sterinova-teal/30"
+                  className="w-full rounded-lg border border-surface-border bg-background px-3 py-2 text-surface-foreground outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/30"
                 />
               </label>
             ))}
           </div>
           <label className="mt-4 block text-sm">
-            <span className="mb-1 block font-medium text-sterinova-dark">
+            <span className="mb-1 block font-medium text-surface-foreground">
               Notas comerciales adicionales (opcional)
             </span>
             <textarea
               rows={3}
               value={condiciones}
               onChange={(event) => setCondiciones(event.target.value)}
-              className="w-full rounded-lg border border-sterinova-dark/20 bg-sterinova-light px-3 py-2 text-sterinova-dark outline-none focus:border-sterinova-teal focus:ring-2 focus:ring-sterinova-teal/30"
+              className="w-full rounded-lg border border-surface-border bg-background px-3 py-2 text-surface-foreground outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/30"
             />
           </label>
         </section>
 
-        <section className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-sterinova-dark/10">
+        <section className="rounded-xl bg-surface p-5 shadow-sm ring-1 ring-surface-border">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-sterinova-dark">
+            <h2 className="text-lg font-semibold text-surface-foreground">
               4. Detalle de ítems
             </h2>
             <button
               type="button"
               onClick={addItem}
-              className="inline-flex items-center gap-2 rounded-lg border border-sterinova-teal px-3 py-2 text-sm font-medium text-sterinova-teal hover:bg-sterinova-teal/10"
+              className="inline-flex items-center gap-2 rounded-lg border border-secondary px-3 py-2 text-sm font-medium text-secondary hover:bg-secondary-hover/10"
             >
               <Plus className="h-4 w-4" aria-hidden />
               Añadir ítem manual
@@ -646,12 +641,12 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
           </div>
 
           <div className="mt-4">
-            <label htmlFor="catalog-search" className="mb-1 block text-sm font-medium text-sterinova-dark">
+            <label htmlFor="catalog-search" className="mb-1 block text-sm font-medium text-surface-foreground">
               Buscar en el catálogo de {TIPOS_SERVICIO.find((type) => type.value === tipoServicio)?.label}
             </label>
             <div className="flex gap-2">
               <div className="relative min-w-0 flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-sterinova-teal" aria-hidden />
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary" aria-hidden />
                 <input
                   id="catalog-search"
                   type="search"
@@ -666,45 +661,45 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
                     }
                   }}
                   placeholder="Descripción, código, referencia o método"
-                  className="w-full rounded-lg border border-sterinova-dark/20 bg-sterinova-light py-2 pl-9 pr-3 text-sterinova-dark outline-none focus:border-sterinova-teal focus:ring-2 focus:ring-sterinova-teal/30"
+                  className="w-full rounded-lg border border-surface-border bg-background py-2 pl-9 pr-3 text-surface-foreground outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/30"
                 />
               </div>
-              {catalogLoading ? <span role="status" className="self-center text-sm text-sterinova-teal">Buscando...</span> : null}
+              {catalogLoading ? <span role="status" className="self-center text-sm text-secondary">Buscando...</span> : null}
             </div>
-            {catalogError ? <p role="alert" className="mt-2 text-sm text-red-600">{catalogError}</p> : null}
+            {catalogError ? <p role="alert" className="mt-2 text-sm text-error">{catalogError}</p> : null}
             {catalogQuery.trim().length > 0 && catalogQuery.trim().length < 2 ? (
-              <p className="mt-2 text-xs text-sterinova-dark/70">Escribe al menos 2 caracteres.</p>
+              <p className="mt-2 text-xs text-surface-subtle">Escribe al menos 2 caracteres.</p>
             ) : null}
             {catalogResults.length > 0 ? (
-              <ul aria-label="Resultados del catálogo" className="mt-2 max-h-64 divide-y overflow-y-auto rounded-lg border border-sterinova-dark/10">
+              <ul aria-label="Resultados del catálogo" className="mt-2 max-h-64 divide-y overflow-y-auto rounded-lg border border-surface-border">
                 {catalogResults.map((product) => (
                   <li key={product.id}>
                     <button
                       type="button"
                       onClick={() => addCatalogProduct(product)}
-                      className="flex w-full flex-wrap items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-sterinova-light"
+                      className="flex w-full flex-wrap items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-background"
                     >
                       <span>
-                        <span className="block font-medium text-sterinova-dark">{product.descripcion}</span>
-                        <span className="text-xs text-sterinova-dark/70">
+                        <span className="block font-medium text-surface-foreground">{product.descripcion}</span>
+                        <span className="text-xs text-surface-subtle">
                           {[product.codigo, product.referencia, product.metodo, product.presentacion, product.marca, product.categoria]
                             .filter(Boolean)
                             .join(" · ") || product.unidad}
                         </span>
                       </span>
-                      <span className="font-semibold text-sterinova-teal">Agregar</span>
+                      <span className="font-semibold text-secondary">Agregar</span>
                     </button>
                   </li>
                 ))}
               </ul>
             ) : catalogQuery.trim().length >= 2 && !catalogLoading && !catalogError ? (
-              <p className="mt-2 text-sm text-sterinova-dark/70">No hay referencias activas para este tipo de cotización.</p>
+              <p className="mt-2 text-sm text-surface-subtle">No hay referencias activas para este tipo de cotización.</p>
             ) : null}
           </div>
 
           <div className="mt-4 overflow-x-auto">
             <table className="min-w-full text-left text-sm">
-              <thead className="bg-sterinova-light text-sterinova-dark">
+              <thead className="bg-background text-surface-foreground">
                 <tr>
                   <th className="px-3 py-2 font-semibold">Descripción y unidad</th>
                   <th className="px-3 py-2 font-semibold">Cantidad</th>
@@ -715,13 +710,13 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
               </thead>
               <tbody>
                 {computedItems.map((item) => (
-                  <tr key={item.key} className="border-t border-sterinova-dark/5">
+                  <tr key={item.key} className="border-t border-surface-border">
                     <td className="min-w-[280px] px-3 py-2">
                       <div className="mb-1 flex items-center gap-2">
-                        <span className="text-xs font-semibold uppercase text-sterinova-teal">
+                        <span className="text-xs font-semibold uppercase text-secondary">
                           {item.producto_id ? "Catálogo" : "Manual"} · {item.tipo_item === "PRODUCTO" ? "Producto" : "Servicio"}
                         </span>
-                        {item.categoria ? <span className="text-xs text-sterinova-dark/70">{item.categoria}</span> : null}
+                        {item.categoria ? <span className="text-xs text-surface-subtle">{item.categoria}</span> : null}
                       </div>
                       <input
                         required={!item.producto_id}
@@ -730,25 +725,25 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
                         onChange={(event) =>
                           updateItem(item.key, "descripcion", event.target.value)
                         }
-                        className="w-full rounded-lg border border-sterinova-dark/20 bg-sterinova-light px-2 py-1.5 read-only:bg-slate-100"
+                        className="w-full rounded-lg border border-surface-border bg-background px-2 py-1.5 read-only:bg-background"
                         placeholder="Descripción del producto o servicio"
                       />
                       {item.producto_id ? (
-                        <p className="mt-1 text-xs text-sterinova-dark/70">
+                        <p className="mt-1 text-xs text-surface-subtle">
                           {[item.codigo, item.referencia, item.metodo, item.presentacion, item.marca]
                             .filter(Boolean)
                             .join(" · ")}
                         </p>
                       ) : (
                         <details className="mt-2 text-xs">
-                          <summary className="cursor-pointer font-medium text-sterinova-teal">Datos de la línea manual</summary>
+                          <summary className="cursor-pointer font-medium text-secondary">Datos de la línea manual</summary>
                           <div className="mt-2 grid gap-2 sm:grid-cols-2">
                             <label className="block">
                               <span className="mb-1 block">Tipo</span>
                               <select
                                 value={item.tipo_item}
                                 onChange={(event) => updateItem(item.key, "tipo_item", event.target.value as TipoItemCatalogo)}
-                                className="w-full rounded border bg-white px-2 py-1.5"
+                                className="w-full rounded border bg-surface px-2 py-1.5"
                               >
                                 <option value="PRODUCTO">Producto</option>
                                 <option value="SERVICIO">Servicio</option>
@@ -758,7 +753,7 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
                               <span className="mb-1 block">Decimales permitidos</span>
                               <select value={item.precision_cantidad}
                                 onChange={(event) => updateItem(item.key, "precision_cantidad", Number(event.target.value))}
-                                className="w-full rounded border bg-white px-2 py-1.5">
+                                className="w-full rounded border bg-surface px-2 py-1.5">
                                 <option value={0}>0 (unidades enteras)</option>
                                 <option value={1}>1 decimal</option>
                                 <option value={2}>2 decimales</option>
@@ -775,7 +770,7 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
                                 <span className="mb-1 block">{label}</span>
                                 <input maxLength={maxLength} value={item[field]}
                                   onChange={(event) => updateItem(item.key, field, event.target.value)}
-                                  className="w-full rounded border bg-white px-2 py-1.5" />
+                                  className="w-full rounded border bg-surface px-2 py-1.5" />
                               </label>
                             ))}
                           </div>
@@ -787,7 +782,7 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
                             <span className="mb-1 block font-medium">Unidad</span>
                             <input required maxLength={80} value={item.unidad}
                               onChange={(event) => updateItem(item.key, "unidad", event.target.value)}
-                              className="w-full rounded border bg-white px-2 py-1.5 text-sm" />
+                              className="w-full rounded border bg-surface px-2 py-1.5 text-sm" />
                           </label>
                           {tipoServicio === "INSUMOS" ? (
                             <label className="block text-xs">
@@ -796,7 +791,7 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
                                 required
                                 value={item.categoria ?? ""}
                                 onChange={(event) => updateItem(item.key, "categoria", event.target.value as CategoriaProducto)}
-                                className="w-full rounded border bg-white px-2 py-1.5 text-sm"
+                                className="w-full rounded border bg-surface px-2 py-1.5 text-sm"
                               >
                                 <option value="">Seleccione...</option>
                                 <option value="EMPAQUES">Empaques</option>
@@ -807,11 +802,11 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
                           ) : null}
                         </div>
                       ) : (
-                        <p className="mt-1 text-xs text-sterinova-dark/70">Unidad: {item.unidad || "—"}</p>
+                        <p className="mt-1 text-xs text-surface-subtle">Unidad: {item.unidad || "—"}</p>
                       )}
                       {tipoServicio === "INSUMOS" ? (
                         <div className="mt-2">
-                          <label className="inline-flex items-center gap-2 text-xs font-medium text-sterinova-dark">
+                          <label className="inline-flex items-center gap-2 text-xs font-medium text-surface-foreground">
                             <input
                               type="checkbox"
                               checked={item.incluir_imagen}
@@ -865,7 +860,7 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
                                 }}
                                 className="mt-1 block max-w-full text-xs"
                               />
-                              <p role="status" className="mt-1 text-xs text-sterinova-dark/70">
+                              <p role="status" className="mt-1 text-xs text-surface-subtle">
                                 {item.imagenFile?.name ??
                                   (item.imagen_key
                                     ? "Imagen guardada"
@@ -886,7 +881,7 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
                         onChange={(e) =>
                           updateItem(item.key, "cantidad", e.target.value)
                         }
-                        className="w-28 rounded-lg border border-sterinova-dark/20 bg-sterinova-light px-2 py-1.5 disabled:opacity-70"
+                        className="w-28 rounded-lg border border-surface-border bg-background px-2 py-1.5 disabled:opacity-70"
                       />
                     </td>
                     <td className="px-3 py-2">
@@ -899,17 +894,17 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
                         onChange={(e) =>
                           updateItem(item.key, "valor_unitario", e.target.value)
                         }
-                        className="w-36 rounded-lg border border-sterinova-dark/20 bg-sterinova-light px-2 py-1.5"
+                        className="w-36 rounded-lg border border-surface-border bg-background px-2 py-1.5"
                       />
                     </td>
-                    <td className="px-3 py-2 font-medium text-sterinova-dark">
+                    <td className="px-3 py-2 font-medium text-surface-foreground">
                       {formatCurrency(item.valor_total)}
                     </td>
                     <td className="px-3 py-2">
                       <button
                         type="button"
                         onClick={() => removeItem(item.key)}
-                        className="rounded-lg p-2 text-red-600 hover:bg-red-50"
+                        className="rounded-lg p-2 text-error hover:bg-red-50"
                         aria-label="Eliminar ítem"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -922,20 +917,20 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
           </div>
         </section>
 
-        <section className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-sterinova-dark/10">
-          <h2 className="text-lg font-semibold text-sterinova-dark">
+        <section className="rounded-xl bg-surface p-5 shadow-sm ring-1 ring-surface-border">
+          <h2 className="text-lg font-semibold text-surface-foreground">
             5. Totales
           </h2>
           <dl className="mt-3 space-y-2 text-sm">
-            <div className="flex justify-between text-sterinova-dark">
+            <div className="flex justify-between text-surface-foreground">
               <dt>Subtotal</dt>
               <dd className="font-medium">{formatCurrency(subtotal)}</dd>
             </div>
-            <div className="flex justify-between text-sterinova-dark">
+            <div className="flex justify-between text-surface-foreground">
               <dt>{tax ? ivaLabel(tax.tasa) : "IVA no disponible"}</dt>
               <dd className="font-medium">{formatCurrency(iva)}</dd>
             </div>
-            <div className="flex justify-between border-t border-sterinova-dark/10 pt-2 text-base font-bold text-sterinova-orange">
+            <div className="flex justify-between border-t border-surface-border pt-2 text-base font-bold text-primary">
               <dt>Total General</dt>
               <dd>{formatCurrency(total)}</dd>
             </div>
@@ -943,7 +938,7 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
         </section>
 
         {error ? (
-          <p className="text-sm font-medium text-red-600" role="alert">
+          <p className="text-sm font-medium text-error" role="alert">
             {error}
           </p>
         ) : null}
@@ -953,7 +948,7 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
           <button
             type="button"
             onClick={() => router.push("/comercial/cotizaciones")}
-            className="rounded-lg px-4 py-2.5 text-sm font-medium text-sterinova-dark hover:bg-white"
+            className="rounded-lg px-4 py-2.5 text-sm font-medium text-surface-foreground hover:bg-surface"
           >
             Cancelar
           </button>
@@ -961,7 +956,7 @@ export default function CotizacionForm({ quoteId }: { quoteId?: string }) {
             type="submit"
             disabled={saving || !tax || !ready || conflict || (Boolean(quoteId) && version == null) || clientes.length === 0}
             aria-busy={saving}
-            className="rounded-lg bg-sterinova-orange px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-70"
+            className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-70"
           >
             {saving ? (
               <span className="inline-flex items-center gap-2">

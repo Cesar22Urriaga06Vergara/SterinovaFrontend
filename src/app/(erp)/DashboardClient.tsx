@@ -21,23 +21,20 @@ export default function DashboardClient() {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8">
       <section>
-        <h1 className="text-3xl font-bold text-sterinova-dark">
-          Bienvenido{user?.nombre ? `, ${user.nombre}` : ""}
+        <h1 className="text-h2 text-surface-foreground">
+          Inicio
         </h1>
-        <p className="mt-2 text-secondary">
-          Accede directamente al trabajo que tienes autorizado.
+        <p className="mt-2 text-sm text-surface-subtle">
+          {user?.nombre ? `Hola, ${user.nombre}. ` : ""}Continúa con tu trabajo.
         </p>
       </section>
 
       <section aria-labelledby="dashboard-areas-heading">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 id="dashboard-areas-heading" className="text-xl font-semibold text-sterinova-dark">
-              Tus áreas de trabajo
+            <h2 id="dashboard-areas-heading" className="text-h5 text-surface-foreground">
+              Accesos de trabajo
             </h2>
-            <p className="mt-1 text-sm text-secondary">
-              Cada acceso muestra únicamente funciones disponibles para tu sesión.
-            </p>
           </div>
         </div>
 
@@ -53,12 +50,12 @@ export default function DashboardClient() {
                 <Link
                   key={id}
                   href={href}
-                  className="group rounded-card border border-surface-border bg-surface p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  className="group rounded-card border border-surface-border bg-surface p-5 transition-colors hover:border-secondary hover:bg-secondary-light/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 >
                   <span className="inline-flex rounded-control bg-secondary-light p-2 text-secondary">
                     <Icon className="h-5 w-5" aria-hidden />
                   </span>
-                  <div className="mt-5 flex items-start justify-between gap-3">
+                  <div className="mt-3 flex items-start justify-between gap-3">
                     <div>
                       <h3 className="text-lg font-semibold text-surface-foreground">{title}</h3>
                       <p className="mt-1 text-sm text-surface-subtle">{description}</p>

@@ -10,18 +10,20 @@ export function ErrorState({ message, onRetry }: ErrorStateProps) {
     <section
       role="alert"
       aria-live="assertive"
-      className="flex flex-col items-center rounded-xl bg-white px-6 py-10 text-center shadow-sm ring-1 ring-red-200"
+      className="flex flex-col items-center rounded-card border border-error/30 bg-error-light px-6 py-10 text-center"
     >
-      <AlertCircle className="h-8 w-8 text-red-600" aria-hidden />
-      <h2 className="mt-3 text-lg font-semibold text-sterinova-dark">
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-error/10">
+        <AlertCircle className="h-6 w-6 text-error" aria-hidden />
+      </span>
+      <h2 className="mt-4 text-h6 text-surface-foreground">
         No se pudo completar la solicitud
       </h2>
-      <p className="mt-1 max-w-md text-sm text-sterinova-dark/80">{message}</p>
+      <p className="mt-1 max-w-md text-body text-surface-subtle">{message}</p>
       {onRetry ? (
         <button
           type="button"
           onClick={onRetry}
-          className="mt-4 rounded-lg bg-sterinova-teal px-4 py-2 text-sm font-semibold text-white hover:brightness-110"
+          className="mt-4 rounded-control bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
         >
           Reintentar
         </button>

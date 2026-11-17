@@ -1,10 +1,12 @@
 import { useId } from "react";
-import type { InputHTMLAttributes } from "react";
+import type { InputHTMLAttributes, ReactNode } from "react";
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
   hint?: string;
   error?: string;
+  startAdornment?: ReactNode;
+  endAdornment?: ReactNode;
 }
 
 export function Input({
@@ -12,6 +14,8 @@ export function Input({
   label,
   hint,
   error,
+  startAdornment,
+  endAdornment,
   className = "",
   "aria-describedby": describedBy,
   ...props
@@ -27,13 +31,25 @@ export function Input({
       <label htmlFor={inputId} className="mb-1.5 block text-sm font-medium text-surface-foreground">
         {label}
       </label>
+      <div className="relative">
+      {startAdornment ? (
+        <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-surface-subtle">
+          {startAdornment}
+        </span>
+      ) : null}
       <input
         {...props}
         id={inputId}
         aria-invalid={error ? true : props["aria-invalid"]}
         aria-describedby={describedByIds}
-        className={`min-h-11 w-full rounded-control border border-surface-border bg-surface px-3.5 py-2.5 text-sm text-surface-foreground placeholder:text-surface-subtle focus-visible:border-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30 disabled:cursor-not-allowed disabled:bg-background disabled:text-surface-subtle ${className}`}
+        className={`min-h-11 w-full rounded-control border border-surface-border bg-surface px-3.5 py-2.5 text-sm text-surface-foreground placeholder:text-surface-subtle focus-visible:border-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/30 disabled:cursor-not-allowed disabled:bg-background disabled:text-surface-subtle ${startAdornment ? "pl-11" : ""} ${endAdornment ? "pr-12" : ""} ${className}`}
       />
+      {endAdornment ? (
+        <span className="absolute inset-y-0 right-0 flex items-center">
+          {endAdornment}
+        </span>
+      ) : null}
+      </div>
       {hint ? (
         <p id={hintId} className="mt-1 text-xs text-surface-subtle">
           {hint}

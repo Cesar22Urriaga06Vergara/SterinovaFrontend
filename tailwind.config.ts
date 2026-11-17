@@ -10,20 +10,20 @@ const config: Config = {
     extend: {
       colors: {
         sterinova: {
-          dark: "#0c4a4e",
-          orange: "#e54d21",
-          teal: "#188f95",
+          dark: "#0a464c",
+          orange: "#eb4824",
+          teal: "#0d777a",
           light: "#f3f4f6",
         },
         primary: {
-          DEFAULT: "#b83b14",
-          hover: "#922e10",
+          DEFAULT: "#0a464c",
+          hover: "#07383d",
           foreground: "#ffffff",
         },
         secondary: {
-          DEFAULT: "#0f6b70",
-          hover: "#0c5559",
-          light: "#ecfeff",
+          DEFAULT: "#0d777a",
+          hover: "#0a6063",
+          light: "#edf5f5",
           "light-foreground": "#164e63",
           foreground: "#ffffff",
         },
@@ -46,13 +46,13 @@ const config: Config = {
         },
         surface: {
           DEFAULT: "#ffffff",
-          border: "#cbd5e1",
+          border: "#dce3e8",
           foreground: "#1e293b",
           subtle: "#475569",
           overlay: "rgb(12 74 78 / 0.55)",
         },
         background: {
-          DEFAULT: "#f3f4f6",
+          DEFAULT: "#f4f6f8",
         },
       },
       fontSize: {

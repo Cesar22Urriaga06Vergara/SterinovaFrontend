@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 test.beforeEach(async ({ page }) => {
   await page.route("http://localhost:3001/auth/me", route => route.fulfill({ json: {
     user: { id: 1, nombre: "Coordinador", rol: "Admin" },
-    permissions: ["cotizaciones.ver", "cotizaciones.crear", "cotizaciones.previsualizar", "cotizaciones.descargar", "cotizaciones.editar", "cotizaciones.emitir"],
+    permissions: ["calidad.ciclos.ver", "calidad.aprobar", "calidad.rechazar", "certificados.ver", "certificados.descargar", "cotizaciones.ver", "cotizaciones.crear", "cotizaciones.previsualizar", "cotizaciones.descargar", "cotizaciones.editar", "cotizaciones.emitir"],
     current_scope: { id: 2, name: "Comercial", kind: "DEPARTMENT" },
     available_scopes: [{ id: 2, name: "Comercial", kind: "DEPARTMENT" }], capabilities: [],
   } }));
@@ -38,6 +38,22 @@ const pendingCycle = {
   fecha_proceso: "2026-11-06T12:00:00.000Z",
   estado: "PENDIENTE_CALIDAD",
 };
+
+test('el diálogo de rechazo contiene el foco y Escape lo devuelve al botón', async ({ page }) => {
+  await seedSession(page);
+  await page.route('http://localhost:3001/calidad/ciclos/21', route => route.fulfill({ json: pendingCycle }));
+  await page.goto('/calidad/revisar/21');
+  const trigger = page.getByRole('button', { name: 'Rechazar', exact: true });
+  await trigger.click();
+  const dialog = page.getByRole('dialog', { name: 'Rechazar ciclo' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'Confirmar rechazo' }).focus();
+  await page.keyboard.press('Tab');
+  expect(await dialog.evaluate(element => element.contains(document.activeElement))).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});
 
 test('No cumple impide emitir y queda incluido al rechazar',async({page})=>{
   await seedSession(page);

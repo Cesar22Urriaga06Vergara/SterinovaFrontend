@@ -15,20 +15,20 @@ export function Header() {
   }
 
   return (
-    <header className="flex h-16 items-center justify-end gap-4 border-b border-sterinova-dark/5 bg-white px-6 shadow-sm">
-      <div className="text-right">
-        <p className="text-sm font-semibold text-sterinova-dark">
+    <header className="flex min-h-16 items-center justify-end gap-3 border-b border-surface-border bg-surface px-4 py-3 sm:gap-4 sm:px-6">
+      <div className="min-w-0 text-right">
+        <p className="text-sm font-semibold text-surface-foreground">
           {user?.nombre ?? "Usuario"}
         </p>
         {user?.profiles?.length ? (
-          <p className="text-xs text-secondary">{user.profiles?.map(profile => profile.name).join(" · ")}</p>
+          <p className="mt-0.5 max-w-sm truncate text-xs text-secondary" title={user.profiles.map(profile => profile.name).join(", ")}>{user.profiles.map(profile => profile.name).join(", ")}</p>
         ) : null}
       </div>
 
       <button
         type="button"
         onClick={handleLogout}
-        className="inline-flex items-center gap-2 rounded-lg border border-sterinova-dark/10 px-3 py-2 text-sm font-medium text-sterinova-dark transition hover:bg-sterinova-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        className="inline-flex shrink-0 items-center gap-2 rounded-control px-3 py-2 text-sm font-medium text-surface-subtle transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
       >
         <LogOut className="h-4 w-4" aria-hidden />
         Cerrar Sesión

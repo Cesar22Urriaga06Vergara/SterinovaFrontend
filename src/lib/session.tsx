@@ -88,7 +88,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         inert={!ready}
         className={!ready ? "hidden" : undefined}
       >
-        {children}
+        {ready ? children : null}
       </div>
     </SessionContext.Provider>
   );
@@ -102,7 +102,7 @@ export function useSession() {
 
 export function useQuoteHeaders(): Record<string, string> {
   const { current_scope } = useSession();
-  const scopeId = current_scope?.id;
+  const scopeId = current_scope?.kind === "GLOBAL" ? undefined : current_scope?.id;
   return useMemo(() => {
     const headers: Record<string, string> = {};
     if (scopeId) headers["x-scope-id"] = String(scopeId);

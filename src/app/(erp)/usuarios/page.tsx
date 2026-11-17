@@ -201,11 +201,11 @@ export default function UsersPage() {
     <div className="mx-auto w-full max-w-7xl space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-sterinova-teal">Administración</p>
-          <h1 className="mt-1 text-3xl font-bold text-sterinova-dark">Usuarios</h1>
+          <p className="text-sm font-semibold uppercase tracking-wide text-secondary">Administración</p>
+          <h1 className="mt-1 text-3xl font-bold text-surface-foreground">Usuarios</h1>
           <p className="mt-2 text-sm text-slate-600">Cuentas, datos de contacto y permisos de acceso al ERP.</p>
         </div>
-        {canCreateUsers ? <button type="button" onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-sterinova-dark px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sterinova-teal">
+        {canCreateUsers ? <button type="button" onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-secondary-hover">
           <Plus className="h-4 w-4" aria-hidden /> Nuevo Usuario
         </button> : null}
       </header>

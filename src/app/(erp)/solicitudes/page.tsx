@@ -17,14 +17,8 @@ import {
   type SolicitudAnulacion,
 } from "@/lib/solicitud-anulacion-types";
 import { getApiErrorMessage } from "@/lib/api-errors";
+import { formatDateTime } from "@/lib/format";
 import { useQuoteHeaders, useSession } from "@/lib/session";
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? "Fecha no disponible"
-    : date.toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" });
-}
 
 export default function SolicitudesPage() {
   const { can, current_scope } = useSession();
@@ -124,7 +118,7 @@ export default function SolicitudesPage() {
     <div className="mx-auto w-full max-w-6xl space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-sterinova-dark">
+          <h1 className="text-3xl font-bold text-surface-foreground">
             Solicitudes Pendientes
           </h1>
           <p className="mt-1 text-sm text-surface-subtle">
@@ -165,7 +159,7 @@ export default function SolicitudesPage() {
               <caption className="sr-only">
                 Solicitudes de anulación pendientes de tus ámbitos autorizados
               </caption>
-              <thead className="bg-sterinova-light text-sterinova-dark">
+              <thead className="bg-background text-surface-foreground">
                 <tr>
                   {[
                     "Cliente",
@@ -208,7 +202,9 @@ export default function SolicitudesPage() {
                     </td>
                     <td className="whitespace-nowrap px-4 py-4">
                       <time dateTime={solicitud.created_at}>
-                        {formatDate(solicitud.created_at)}
+                        {formatDateTime(solicitud.created_at, {
+                          invalidText: "Fecha no disponible",
+                        })}
                       </time>
                     </td>
                     <td className="px-4 py-4">

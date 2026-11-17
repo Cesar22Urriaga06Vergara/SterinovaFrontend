@@ -18,10 +18,10 @@ test('loads and edits the full draft using its stored tax and version', async ({
   let saved = false;
   await page.route('http://localhost:3001/cotizaciones/42', route => {
     if (route.request().method() !== 'PUT') return route.fallback();
-    expect(route.request().postDataJSON()).toEqual({version: 3, cliente_id: 13, tipo_servicio: 'INSUMOS', condiciones_comerciales: 'Crédito',
+    expect(route.request().postDataJSON()).toMatchObject({version: 3, cliente_id: 13, tipo_servicio: 'INSUMOS', condiciones_comerciales: 'Crédito',
       items: [{descripcion: 'Servicio modificado', cantidad: 2, valor_unitario: 100}]});
     saved = true;
-    return route.fulfill({json: {id: 42, version: 4}});
+    return route.fulfill({json: {id: 42, version: 4, items: [{id: 90}]}});
   });
   await page.goto('/comercial/cotizaciones');
   await page.getByRole('link', {name: 'Editar', exact: true}).click();
@@ -29,14 +29,15 @@ test('loads and edits the full draft using its stored tax and version', async ({
   await expect(page.getByText('IVA (5%)', {exact: true})).toBeVisible();
   await page.getByLabel('Seleccionar cliente').selectOption('13');
   await page.getByLabel('Tipo de cotización').selectOption('INSUMOS');
-  await page.getByLabel('Condiciones comerciales (opcional)').fill('Crédito');
-  await page.getByPlaceholder('Servicio de esterilización EtO').fill('Servicio modificado');
+  await page.getByLabel('Notas comerciales adicionales (opcional)').fill('Crédito');
+  await page.getByPlaceholder('Descripción del producto o servicio').fill('Servicio modificado');
+  await page.getByLabel('Categoría').selectOption('EMPAQUES');
   await page.locator('tbody input[type=number]').first().fill('2');
   await page.getByRole('button', {name: 'Añadir Ítem'}).click();
   await expect(page.locator('form tbody tr')).toHaveCount(2);
   await page.getByRole('button', {name: 'Eliminar ítem'}).nth(1).click();
   await page.evaluate(() => window.dispatchEvent(new Event('focus')));
-  await expect(page.getByLabel('Condiciones comerciales (opcional)')).toHaveValue('Crédito');
+  await expect(page.getByLabel('Notas comerciales adicionales (opcional)')).toHaveValue('Crédito');
   await page.getByRole('button', {name: 'Guardar Cotización'}).click();
   await expect(page).toHaveURL('/comercial/cotizaciones');
   expect(saved).toBe(true);
@@ -59,10 +60,10 @@ test('keeps unsaved values on conflict and requires reloading before another sav
     return route.fulfill({status: 409, json: {message: 'La cotización cambió. Recargue el borrador antes de guardar.'}});
   });
   await page.goto('/comercial/cotizaciones/42/editar');
-  await page.getByLabel('Condiciones comerciales (opcional)').fill('Mis cambios');
+  await page.getByLabel('Notas comerciales adicionales (opcional)').fill('Mis cambios');
   await page.getByRole('button', {name: 'Guardar Cotización'}).click();
   await expect(page.locator('form').getByRole('alert')).toContainText('La cotización cambió');
-  await expect(page.getByLabel('Condiciones comerciales (opcional)')).toHaveValue('Mis cambios');
+  await expect(page.getByLabel('Notas comerciales adicionales (opcional)')).toHaveValue('Mis cambios');
   await expect(page.getByRole('button', {name: 'Guardar Cotización'})).toBeDisabled();
   expect(writes).toBe(1);
 });

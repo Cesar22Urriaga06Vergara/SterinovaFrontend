@@ -17,7 +17,7 @@ type ToastMessage = {
 const toastStyles: Record<ToastKind, string> = {
   success: "border-emerald-200 text-emerald-950",
   error: "border-red-200 text-red-950",
-  info: "border-sterinova-teal/30 text-sterinova-dark",
+  info: "border-secondary/30 text-surface-foreground",
 };
 
 const toastIcons = {

@@ -4,32 +4,31 @@ export const navigationSections = [
     links: [{ href: "/", label: "Inicio", icon: "home", session: true }],
   },
   {
-    title: "Maestros",
+    title: "Comercial",
     links: [
       { href: "/comercial/clientes", label: "Clientes", icon: "users", permission: "clientes.ver" },
       { href: "/comercial/productos", label: "Catálogo", icon: "package", permission: "productos.gestionar" },
+      { href: "/comercial/cotizaciones", label: "Cotizaciones", icon: "fileText", permission: "cotizaciones.ver" },
     ],
   },
   {
     title: "Operación",
     links: [
-      {
-        href: "/comercial",
-        label: "Panel Comercial",
-        icon: "briefcase",
-        permissions: ["clientes.ver", "productos.gestionar", "cotizaciones.ver"],
-      },
-      { href: "/comercial/cotizaciones", label: "Cotizaciones", icon: "fileText", permission: "cotizaciones.ver" },
       { href: "/logistica", label: "Logística", icon: "truck", permission: "logistica.ordenes.ver" },
-      { href: "/planta", label: "Planta", icon: "factory", permission: "planta.ordenes.ver" },
-      { href: "/calidad", label: "Calidad", icon: "checkCircle", permission: "calidad.ciclos.ver" },
-      { href: "/solicitudes", label: "Solicitudes Pendientes", icon: "fileText", permission: "solicitudes_anulacion.ver" },
+      { href: "/planta", label: "Planta", icon: "factory", permissions: ["planta.ordenes.ver", "planta.ciclos.ver"] },
+      { href: "/calidad", label: "Calidad", icon: "checkCircle", permissions: ["calidad.ciclos.ver", "certificados.ver"] },
     ],
   },
   {
-    title: "Administración",
+    title: "Gestión",
     links: [
+      { href: "/solicitudes", label: "Solicitudes de anulación", icon: "fileText", permission: "solicitudes_anulacion.ver" },
       { href: "/usuarios", label: "Usuarios", icon: "users", permission: "usuarios.ver" },
+    ],
+  },
+  {
+    title: "Documentos",
+    links: [
       { href: "/configuracion/plantillas", label: "Plantillas", icon: "settings", permission: "formatos.ver" },
       { href: "/configuracion/sellos", label: "Sellos", icon: "badgeCheck", permission: "sellos.ver" },
     ],
@@ -60,8 +59,11 @@ export function canAccessPath(pathname: string, permissions: readonly string[] =
     ["/comercial/cotizaciones", "cotizaciones.ver"],
     ["/comercial", ["clientes.ver", "productos.gestionar", "cotizaciones.ver"]],
     ["/logistica", "logistica.ordenes.ver"],
-    ["/planta", "planta.ordenes.ver"],
-    ["/calidad", "calidad.ciclos.ver"],
+    ["/planta/ciclo/nuevo", "planta.ciclos.crear"],
+    ["/planta", ["planta.ordenes.ver", "planta.ciclos.ver"]],
+    ["/calidad/certificados", "certificados.ver"],
+    ["/calidad/revisar", "calidad.ciclos.ver"],
+    ["/calidad", ["calidad.ciclos.ver", "certificados.ver"]],
     ["/solicitudes", "solicitudes_anulacion.ver"],
     ["/usuarios", "usuarios.ver"],
     ["/configuracion/plantillas", "formatos.ver"],
