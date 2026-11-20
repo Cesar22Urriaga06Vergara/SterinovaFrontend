@@ -2,15 +2,10 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { Pencil, Plus, ShieldCheck, ShieldOff } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { useQuoteHeaders, useSession } from "@/lib/session";
-import type {
-  CategoriaProducto,
-  ProductoCatalogo,
-  TipoItemCatalogo,
-} from "@/lib/producto-types";
+import type { ProductoCatalogo, TipoItemCatalogo } from "@/lib/producto-types";
 import {
   TIPOS_SERVICIO,
   type TipoServicioCotizacion,
@@ -34,59 +29,33 @@ const OPCIONES_TIPO_ITEM = [
   { value: "SERVICIO", label: "Servicio" },
 ];
 
-const OPCIONES_CATEGORIA = [
-  { value: "EMPAQUES", label: "Empaques" },
-  { value: "MONITOREO", label: "Monitoreo" },
-  { value: "EQUIPOS", label: "Equipos" },
-];
-
-const OPCIONES_PRECISION = [
-  { value: "0", label: "0 decimales" },
-  { value: "1", label: "1 decimal" },
-  { value: "2", label: "2 decimales" },
-];
-
-const CAMPOS_OPCIONALES = [
-  ["Código", "codigo", 80],
-  ["Referencia", "referencia", 160],
-  ["Método", "metodo", 120],
-  ["Presentación", "presentacion", 160],
-  ["Marca", "marca", 120],
-] as const;
-
 type ProductoForm = {
   tipo_servicio: TipoServicioCotizacion;
   tipo_item: TipoItemCatalogo;
-  categoria: CategoriaProducto | "";
-  codigo: string;
-  referencia: string;
-  metodo: string;
-  presentacion: string;
-  marca: string;
   descripcion: string;
-  unidad: string;
-  precision_cantidad: number;
 };
 
 const emptyForm = (): ProductoForm => ({
   tipo_servicio: "INDUSTRIAL_ETO",
   tipo_item: "PRODUCTO",
-  categoria: "",
-  codigo: "",
-  referencia: "",
-  metodo: "",
-  presentacion: "",
-  marca: "",
   descripcion: "",
-  unidad: "",
-  precision_cantidad: 0,
 });
 
 export default function ProductosCatalogoClient() {
-  const router = useRouter();
-  const { can } = useSession();
+  const { can, loading: sessionLoading, current_scope, available_scopes, capabilities } = useSession();
   const headers = useQuoteHeaders();
   const allowed = can("productos.gestionar");
+  const hasActiveCatalogScope = capabilities.some((capability) =>
+    capability.permission === "productos.gestionar" && capability.scope_ids.some((scopeId) => {
+      const scope = available_scopes.find((item) => item.id === scopeId);
+      return Boolean(scope && scope.kind !== "GLOBAL");
+    }),
+  );
+  const scopeContextReady = current_scope?.kind === "GLOBAL"
+    ? false
+    : current_scope
+      ? hasActiveCatalogScope && available_scopes.some((scope) => scope.id === current_scope.id)
+      : hasActiveCatalogScope;
   const [products, setProducts] = useState<ProductoCatalogo[]>([]);
   const [form, setForm] = useState<ProductoForm>(emptyForm);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -96,8 +65,9 @@ export default function ProductosCatalogoClient() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!allowed) {
-      router.replace("/comercial");
+    if (sessionLoading) return;
+    if (!allowed || !scopeContextReady) {
+      setLoading(false);
       return;
     }
     let active = true;
@@ -117,7 +87,7 @@ export default function ProductosCatalogoClient() {
     return () => {
       active = false;
     };
-  }, [allowed, headers, router]);
+  }, [allowed, headers, scopeContextReady, sessionLoading]);
 
   function updateForm<K extends keyof ProductoForm>(
     field: K,
@@ -136,15 +106,7 @@ export default function ProductosCatalogoClient() {
     setForm({
       tipo_servicio: product.tipo_servicio,
       tipo_item: product.tipo_item,
-      categoria: product.categoria ?? "",
-      codigo: product.codigo ?? "",
-      referencia: product.referencia ?? "",
-      metodo: product.metodo ?? "",
-      presentacion: product.presentacion ?? "",
-      marca: product.marca ?? "",
       descripcion: product.descripcion,
-      unidad: product.unidad,
-      precision_cantidad: product.precision_cantidad,
     });
     setEditingId(product.id);
     setFormOpen(true);
@@ -155,13 +117,7 @@ export default function ProductosCatalogoClient() {
     if (!allowed || saving) return;
     setSaving(true);
     setError("");
-    const { categoria, ...rest } = form;
-    const payload = {
-      ...rest,
-      ...(form.tipo_servicio === "INSUMOS" && categoria
-        ? { categoria }
-        : {}),
-    };
+    const payload = { tipo_servicio: form.tipo_servicio, tipo_item: form.tipo_item, descripcion: form.descripcion.trim() };
     try {
       if (editingId) {
         const { data } = await api.put<ProductoCatalogo>(
@@ -207,7 +163,18 @@ export default function ProductosCatalogoClient() {
     }
   }
 
-  if (!allowed) return null;
+  if (sessionLoading) {
+    return <p role="status" className="mx-auto max-w-6xl py-8 text-sm text-surface-subtle">Validando sesión y permisos…</p>;
+  }
+  if (!allowed || !scopeContextReady) {
+    return (
+      <section role="alert" className="mx-auto max-w-3xl rounded-card border border-error/30 bg-error-light p-6 text-body text-error">
+        {!allowed
+          ? "No tienes permiso para consultar el catálogo de productos."
+          : "Selecciona un ámbito de área autorizado para consultar el catálogo de productos."}
+      </section>
+    );
+  }
 
   return (
     <section className="mx-auto w-full max-w-6xl space-y-6">
@@ -239,7 +206,6 @@ export default function ProductosCatalogoClient() {
               setForm((current) => ({
                 ...current,
                 tipo_servicio,
-                categoria: tipo_servicio === "INSUMOS" ? current.categoria : "",
               }));
             }}
           />
@@ -250,16 +216,6 @@ export default function ProductosCatalogoClient() {
             value={form.tipo_item}
             onChange={(event) => updateForm("tipo_item", event.target.value as TipoItemCatalogo)}
           />
-          {form.tipo_servicio === "INSUMOS" ? (
-            <Select
-              label="Categoría"
-              required
-              placeholder="Seleccione..."
-              options={OPCIONES_CATEGORIA}
-              value={form.categoria}
-              onChange={(event) => updateForm("categoria", event.target.value as CategoriaProducto | "")}
-            />
-          ) : null}
           <Input
             label="Descripción"
             required
@@ -267,29 +223,6 @@ export default function ProductosCatalogoClient() {
             value={form.descripcion}
             onChange={(event) => updateForm("descripcion", event.target.value)}
           />
-          <Input
-            label="Unidad"
-            required
-            maxLength={80}
-            value={form.unidad}
-            placeholder="unidad, caja, kg..."
-            onChange={(event) => updateForm("unidad", event.target.value)}
-          />
-          <Select
-            label="Decimales permitidos en cantidad"
-            options={OPCIONES_PRECISION}
-            value={String(form.precision_cantidad)}
-            onChange={(event) => updateForm("precision_cantidad", Number(event.target.value))}
-          />
-          {CAMPOS_OPCIONALES.map(([label, field, maxLength]) => (
-            <Input
-              key={field}
-              label={`${label} (opcional)`}
-              maxLength={maxLength}
-              value={form[field]}
-              onChange={(event) => updateForm(field, event.target.value)}
-            />
-          ))}
           <div className="flex flex-wrap justify-end gap-2 md:col-span-2">
               <Button type="button" variant="ghost" onClick={resetForm} disabled={saving}>
                 Cancelar
@@ -317,13 +250,12 @@ export default function ProductosCatalogoClient() {
           </div>
         </CardHeader>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left text-body">
+          <table className="w-full min-w-[760px] text-left text-body">
             <thead className="bg-background text-surface-foreground">
               <tr>
-                <th className="px-4 py-3 font-semibold">Tipo</th>
-                <th className="px-4 py-3 font-semibold">Código / referencia</th>
+                <th className="px-4 py-3 font-semibold">Tipo de cotización</th>
+                <th className="px-4 py-3 font-semibold">Tipo de ítem</th>
                 <th className="px-4 py-3 font-semibold">Descripción</th>
-                <th className="px-4 py-3 font-semibold">Unidad</th>
                 <th className="px-4 py-3 font-semibold">Estado</th>
                 <th className="px-4 py-3 text-right font-semibold">Acciones</th>
               </tr>
@@ -331,7 +263,7 @@ export default function ProductosCatalogoClient() {
             <tbody className="divide-y divide-surface-border">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8">
+                  <td colSpan={5} className="px-4 py-8">
                     <span role="status" aria-live="polite" className="sr-only">
                       Cargando catálogo...
                     </span>
@@ -344,23 +276,14 @@ export default function ProductosCatalogoClient() {
                   </td>
                 </tr>
               ) : products.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-10 text-center text-surface-subtle">Aún no hay referencias en el catálogo.</td></tr>
+                <tr><td colSpan={5} className="px-4 py-10 text-center text-surface-subtle">Aún no hay referencias en el catálogo.</td></tr>
               ) : products.map((product) => (
                 <tr key={product.id} className="hover:bg-background/60">
-                  <td className="px-4 py-3">
-                    <span className="block font-medium text-surface-foreground">{TIPOS_SERVICIO.find((type) => type.value === product.tipo_servicio)?.label ?? product.tipo_servicio}</span>
-                    <span className="text-caption text-surface-subtle">
-                      {product.tipo_item === "PRODUCTO" ? "Producto" : "Servicio"}{product.categoria ? ` · ${product.categoria}` : ""}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-surface-foreground">{[product.codigo, product.referencia].filter(Boolean).join(" · ") || "—"}</td>
+                  <td className="px-4 py-3">{TIPOS_SERVICIO.find((type) => type.value === product.tipo_servicio)?.label ?? product.tipo_servicio}</td>
+                  <td className="px-4 py-3">{product.tipo_item === "PRODUCTO" ? "Producto" : "Servicio"}</td>
                   <td className="px-4 py-3">
                     <span className="block font-medium text-surface-foreground">{product.descripcion}</span>
-                    <span className="text-caption text-surface-subtle">
-                      {[product.metodo, product.presentacion, product.marca].filter(Boolean).join(" · ") || null}
-                    </span>
                   </td>
-                  <td className="px-4 py-3 text-surface-foreground">{product.unidad} · {product.precision_cantidad} dec.</td>
                   <td className="px-4 py-3">
                     <Badge variant={product.activo ? "success" : "neutral"}>
                       {product.activo ? "Activo" : "Inactivo"}

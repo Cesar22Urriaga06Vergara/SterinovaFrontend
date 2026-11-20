@@ -140,7 +140,10 @@ test("las vistas comerciales delegan el ámbito al contrato del recurso", () => 
   const products = read("src/app/(erp)/comercial/productos/ProductosCatalogoClient.tsx");
   const quoteForm = read("src/components/cotizaciones/CotizacionForm.tsx");
 
-  assert.doesNotMatch(products, /Selecciona un ámbito operativo/);
+  assert.match(products, /if \(sessionLoading\) return/);
+  assert.match(products, /if \(!allowed \|\| !scopeContextReady\)/);
+  assert.match(products, /productos\.gestionar/);
+  assert.match(products, /api\.get<ProductoCatalogo\[]>\("\/productos"/);
   assert.doesNotMatch(quoteForm, /Selecciona un ámbito operativo/);
 });
 

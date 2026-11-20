@@ -15,8 +15,10 @@ export const navigationSections = [
     title: "Operación",
     links: [
       { href: "/logistica", label: "Logística", icon: "truck", permission: "logistica.ordenes.ver" },
+      { href: "/logistica/conductores", label: "Conductores", icon: "truck", permission: "logistica.ordenes.ver" },
       { href: "/planta", label: "Planta", icon: "factory", permissions: ["planta.ordenes.ver", "planta.ciclos.ver"] },
       { href: "/calidad", label: "Calidad", icon: "checkCircle", permissions: ["calidad.ciclos.ver", "certificados.ver"] },
+      { href: "/calidad/protocolos", label: "Protocolos", icon: "checkCircle", permission: "planta.protocolos.ver" },
     ],
   },
   {
@@ -50,7 +52,7 @@ export const navigationSections = [
   {
     title: "Administración",
     links: [
-      { href: "/administracion/roles-ambitos", label: "Roles y ámbitos", icon: "shield", permissions: ["roles.gestionar", "ambitos.gestionar"] },
+      { href: "/administracion/roles-ambitos", label: "Roles y ámbitos", icon: "shield", globalPermissions: ["ambitos.gestionar", "asignaciones.gestionar"] },
     ],
   },
 ] as const;
@@ -79,17 +81,22 @@ export function getHomePath(permissions: readonly string[] = []): string {
   ].find((path) => canAccessPath(path, permissions)) ?? '/';
 }
 
-export function canAccessPath(pathname: string, permissions: readonly string[] = []): boolean {
+export function canAccessPath(pathname: string, permissions: readonly string[] = [], canManageGlobalRolesOrScopes = false): boolean {
   if (pathname === "/") return true;
+  if (pathname === "/administracion/roles-ambitos" || pathname.startsWith("/administracion/roles-ambitos/")) {
+    return canManageGlobalRolesOrScopes;
+  }
   const pathPermissions: readonly [string, string | readonly string[]][] = [
     ["/comercial/clientes", "clientes.ver"],
     ["/comercial/productos", "productos.gestionar"],
     ["/comercial/cotizaciones", "cotizaciones.ver"],
     ["/comercial", ["clientes.ver", "productos.gestionar", "cotizaciones.ver"]],
     ["/logistica", "logistica.ordenes.ver"],
+    ["/logistica/conductores", "logistica.ordenes.ver"],
     ["/planta/ciclo/nuevo", "planta.ciclos.crear"],
     ["/planta", ["planta.ordenes.ver", "planta.ciclos.ver"]],
     ["/calidad/certificados", "certificados.ver"],
+    ["/calidad/protocolos", "planta.protocolos.ver"],
     ["/calidad/revisar", "calidad.ciclos.ver"],
     ["/calidad", ["calidad.ciclos.ver", "certificados.ver"]],
     ["/solicitudes", "solicitudes_anulacion.ver"],
@@ -100,7 +107,6 @@ export function canAccessPath(pathname: string, permissions: readonly string[] =
     ["/gerencia/administradores", "gerencia.administradores.gestionar"],
     ["/gerencia", "gerencia.metricas.ver"],
     ["/auditoria", "auditoria.ver"],
-    ["/administracion/roles-ambitos", ["roles.gestionar", "ambitos.gestionar"]],
   ];
   const match = [...pathPermissions]
     .sort(([first], [second]) => second.length - first.length)
@@ -108,12 +114,13 @@ export function canAccessPath(pathname: string, permissions: readonly string[] =
   return match ? hasRequiredPermission(permissions, match[1]) : false;
 }
 
-export function getVisibleNavigationSections(permissions: readonly string[]) {
+export function getVisibleNavigationSections(permissions: readonly string[], canManageGlobalRolesOrScopes = false) {
   return navigationSections.map((section) => ({
     ...section,
     links: section.links.filter((link) => {
       if ("permission" in link) return permissions.includes(link.permission);
       if ("permissions" in link) return hasRequiredPermission(permissions, link.permissions);
+      if ("globalPermissions" in link) return canManageGlobalRolesOrScopes;
       return true;
     }),
   })).filter((section) => section.links.length > 0);

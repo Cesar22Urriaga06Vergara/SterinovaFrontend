@@ -116,17 +116,39 @@ function valueOrBlank(value: string | null | undefined) {
 
 export const CotizacionPDF = forwardRef<HTMLDivElement, Props>(
   function CotizacionPDF({ data, metadata, creatorMode = "document" }, ref) {
-    const content = getCotizacionPdfContent(
-      data.tipo_servicio,
-      ivaLabel(data.iva_tasa),
-    );
-    const template = templateStyles[data.tipo_servicio];
+    const baseContent = getCotizacionPdfContent(data.tipo_servicio);
+    const configuration = metadata?.configuration ?? {};
+    const detail = (configuration.detail ?? {}) as Record<string, unknown>;
+    const branding = (configuration.branding ?? {}) as Record<string, unknown>;
+    const content = {
+      ...baseContent,
+      title: metadata?.title || baseContent.title,
+      subtitle: String(configuration.subtitle ?? baseContent.subtitle),
+      paragraphs: Array.isArray(configuration.paragraphs)
+        ? configuration.paragraphs.filter((value): value is string => typeof value === "string")
+        : baseContent.paragraphs,
+    };
+    const baseTemplate = templateStyles[data.tipo_servicio];
+    const template = {
+      ...baseTemplate,
+      accent: typeof branding.accent === "string" ? branding.accent : baseTemplate.accent,
+      secondary: typeof branding.secondary === "string" ? branding.secondary : typeof branding.accent === "string" ? branding.accent : baseTemplate.secondary,
+      light: typeof branding.light === "string" ? branding.light : baseTemplate.light,
+      border: typeof branding.border === "string" ? branding.border : baseTemplate.border,
+    };
+    const configuredClientFields = Array.isArray(configuration.client_fields) ? configuration.client_fields as string[] : [];
+    const columns = Array.isArray(detail.columns) ? detail.columns as string[] : ["DESCRIPCIÓN", "CANTIDAD", "VALOR UNITARIO", "VALOR TOTAL"];
+    const configuredTermLabels = Array.isArray(configuration.commercial_terms) ? configuration.commercial_terms as string[] : [];
+    const signatures = Array.isArray(configuration.signatures) ? configuration.signatures as Array<{label?: string;name?: string;role?: string;phone?: string;email?: string}> : [];
+    const seals = data.sellos?.certificaciones?.length ? data.sellos.certificaciones : data.sellos?.icontec ? [data.sellos.icontec] : [];
+    const itemSubtotal = Math.max(0, Number(data.subtotal) - Number(data.valor_transporte ?? 0));
     const creatorName = [data.creador?.nombre, data.creador?.apellido]
       .filter(Boolean)
       .join(" ");
     const documentStyle = {
       padding: `${template.topPadding} ${template.horizontalPadding} ${template.bottomPadding}`,
     } satisfies CSSProperties;
+    const productSections = Array.isArray(configuration.product_sections) ? configuration.product_sections as string[] : ["EMPAQUES PARA ESTERILIZACIÓN", "MONITOREO ESTERILIZACIÓN", "EQUIPOS APOYO TECNOLÓGICO"];
     const insumosGroups = data.tipo_servicio === "INSUMOS"
       ? (["EMPAQUES", "MONITOREO", "EQUIPOS"] as const)
           .map((category) => ({
@@ -139,65 +161,18 @@ export const CotizacionPDF = forwardRef<HTMLDivElement, Props>(
       : [];
 
     function renderItemRow(item: NonNullable<Cotizacion["items"]>[number], index: number) {
+      const isInsumos = data.tipo_servicio === "INSUMOS";
+      const cells = isInsumos
+        ? [
+            item.codigo || "",
+            <div key="reference" className="flex items-start justify-between gap-2"><div><strong>{item.referencia}</strong><p>{item.descripcion}</p></div>{item.imagen_src ? <Image src={item.imagen_src} alt={`Imagen de ${item.descripcion}`} width={100} height={70} unoptimized className="h-[18mm] w-[24mm] shrink-0 object-contain" /> : null}</div>,
+            [item.presentacion, item.metodo, item.marca].filter(Boolean).join(" · "),
+            formatearMoneda(item.valor_unitario),
+          ]
+        : [item.descripcion, `${item.cantidad}${item.unidad ? ` ${item.unidad}` : ""}`, formatearMoneda(item.valor_unitario), formatearMoneda(item.valor_total)];
       return (
-        <tr
-          key={item.id ?? `${item.descripcion}-${index}`}
-          className="break-inside-avoid"
-        >
-          <td
-            className="whitespace-pre-line break-words border px-[2mm] py-[1.1mm]"
-            style={{ borderColor: template.border }}
-          >
-            {data.tipo_servicio === "INSUMOS" ? (
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  {item.codigo || item.referencia ? (
-                    <p className="font-semibold">
-                      {[item.codigo, item.referencia].filter(Boolean).join(" · ")}
-                    </p>
-                  ) : null}
-                  <p>{item.descripcion}</p>
-                  {[item.metodo, item.presentacion, item.marca]
-                    .filter(Boolean)
-                    .length > 0 ? (
-                    <p className="mt-1 text-[7pt] text-gray-600">
-                      {[item.metodo, item.presentacion, item.marca]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
-                  ) : null}
-                </div>
-                {item.imagen_src ? (
-                  <Image
-                    src={item.imagen_src}
-                    alt={`Imagen de ${item.descripcion}`}
-                    width={100}
-                    height={70}
-                    unoptimized
-                    className="h-[18mm] w-[24mm] shrink-0 object-contain"
-                  />
-                ) : null}
-              </div>
-            ) : item.descripcion}
-          </td>
-          <td
-            className="border px-[1.5mm] py-[1.1mm] text-center"
-            style={{ borderColor: template.border }}
-          >
-            {item.cantidad}{data.tipo_servicio === "INSUMOS" && item.unidad ? ` ${item.unidad}` : ""}
-          </td>
-          <td
-            className="border px-[1.5mm] py-[1.1mm] text-right"
-            style={{ borderColor: template.border }}
-          >
-            {formatearMoneda(item.valor_unitario)}
-          </td>
-          <td
-            className="border px-[1.5mm] py-[1.1mm] text-right"
-            style={{ borderColor: template.border }}
-          >
-            {formatearMoneda(item.valor_total)}
-          </td>
+        <tr key={item.id ?? `${item.descripcion}-${index}`} className="break-inside-avoid">
+          {cells.map((value, cellIndex) => <td key={cellIndex} className={`whitespace-pre-line break-words border px-[1.5mm] py-[1.1mm] ${cellIndex === 0 && isInsumos ? "text-center" : cellIndex > 1 ? "text-right" : "text-left"}`} style={{ borderColor: template.border }}>{value}</td>)}
         </tr>
       );
     }
@@ -223,15 +198,10 @@ export const CotizacionPDF = forwardRef<HTMLDivElement, Props>(
               unoptimized
               className="h-auto w-[43mm] object-contain"
             />
-            {data.sellos?.icontec?.imagen_src ? (
-              <Image
-                src={data.sellos.icontec.imagen_src}
-                alt="Certificaciones Icontec ISO 9001, ISO 13485 e IQNET"
-                width={442}
-                height={110}
-                unoptimized
-                className="mx-auto h-auto w-[43mm] object-contain"
-              />
+            {seals.length ? (
+              <div className="flex flex-wrap items-center justify-center gap-1">
+                {seals.map((seal) => <Image key={`${seal.sello_id}-${seal.version_id}`} src={seal.imagen_src} alt={seal.nombre_norma || "Sello de certificación"} width={442} height={110} unoptimized className="h-auto max-h-[18mm] w-[32mm] object-contain" />)}
+              </div>
             ) : (
               <div aria-label="Sello ICONTEC pendiente de emision" />
             )}
@@ -303,7 +273,9 @@ export const CotizacionPDF = forwardRef<HTMLDivElement, Props>(
 
           <table className="w-full table-fixed border-collapse text-[8pt]">
             <tbody>
-              {clientFields.map(([label, getValue]) => (
+              {clientFields.map(([defaultLabel, getValue], index) => {
+                const label = index === 1 ? String(configuration.nit_label ?? configuredClientFields[index] ?? defaultLabel) : configuredClientFields[index] ?? defaultLabel;
+                return (
                 <tr key={label} className="break-inside-avoid">
                   <td
                     className="w-[3mm] border px-0 py-[0.9mm]"
@@ -330,13 +302,13 @@ export const CotizacionPDF = forwardRef<HTMLDivElement, Props>(
                     {valueOrBlank(getValue(data))}
                   </td>
                 </tr>
-              ))}
+              );})}
             </tbody>
           </table>
 
           <section className="my-[3mm] space-y-[1.5mm] text-justify text-[8.5pt] leading-[1.35]">
-            {content.paragraphs.map((paragraph) => (
-              <p key={paragraph}>{paragraph}</p>
+              {content.paragraphs.map((paragraph, index) => (
+                <p key={`${index}-${paragraph}`}>{paragraph}</p>
             ))}
           </section>
 
@@ -344,30 +316,37 @@ export const CotizacionPDF = forwardRef<HTMLDivElement, Props>(
             className="mb-[2mm] border-b pb-[1.5mm] text-[9pt] font-bold tracking-wide"
             style={{ borderColor: template.border, color: template.accent }}
           >
-            DETALLE DE COTIZACIÓN:
+            {String(detail.title ?? "DETALLE DE COTIZACIÓN:")}
           </h2>
           <table className="w-full table-fixed border-collapse text-[8pt]">
             <thead className="table-header-group">
               <tr className="text-white">
                 <th
-                  className="w-[46%] border px-[2mm] py-[1.6mm] text-left font-bold"
+                  className={`${data.tipo_servicio === "INSUMOS" ? "w-[14%]" : "w-[46%]"} border px-[2mm] py-[1.6mm] text-left font-bold`}
                   style={{
                     backgroundColor: template.secondary,
                     borderColor: template.secondary,
                   }}
                 >
-                  {data.tipo_servicio === "INSUMOS"
-                    ? "REFERENCIA / DESCRIPCIÓN"
-                    : "DESCRIPCIÓN"}
+                  {columns[0] ?? "DESCRIPCIÓN"}
                 </th>
                 <th
-                  className="w-[14%] border px-[1.5mm] py-[1.6mm] text-center font-bold"
+                  className={`${data.tipo_servicio === "INSUMOS" ? "w-[42%]" : "w-[14%]"} border px-[1.5mm] py-[1.6mm] text-center font-bold`}
                   style={{
                     backgroundColor: template.secondary,
                     borderColor: template.secondary,
                   }}
                 >
-                  CANTIDAD
+                  {columns[1] ?? "CANTIDAD"}
+                </th>
+                <th
+                  className={`${data.tipo_servicio === "INSUMOS" ? "w-[24%]" : "w-[20%]"} border px-[1.5mm] py-[1.6mm] text-right font-bold`}
+                  style={{
+                    backgroundColor: template.secondary,
+                    borderColor: template.secondary,
+                  }}
+                >
+                  {columns[2] ?? "VALOR UNITARIO"}
                 </th>
                 <th
                   className="w-[20%] border px-[1.5mm] py-[1.6mm] text-right font-bold"
@@ -376,16 +355,7 @@ export const CotizacionPDF = forwardRef<HTMLDivElement, Props>(
                     borderColor: template.secondary,
                   }}
                 >
-                  VALOR UNITARIO
-                </th>
-                <th
-                  className="w-[20%] border px-[1.5mm] py-[1.6mm] text-right font-bold"
-                  style={{
-                    backgroundColor: template.secondary,
-                    borderColor: template.secondary,
-                  }}
-                >
-                  VALOR TOTAL
+                  {columns[3] ?? "VALOR TOTAL"}
                 </th>
               </tr>
             </thead>
@@ -403,9 +373,7 @@ export const CotizacionPDF = forwardRef<HTMLDivElement, Props>(
                             color: template.secondary,
                           }}
                         >
-                          {group.category === "EMPAQUES"
-                            ? "EMPAQUES PARA ESTERILIZACIÓN"
-                            : group.category}
+                          {group.category === "EMPAQUES" ? productSections[0] : group.category === "MONITOREO" ? productSections[1] : productSections[2]}
                         </th>
                       </tr>
                       {group.items.map((item, index) => renderItemRow(item, index))}
@@ -425,17 +393,28 @@ export const CotizacionPDF = forwardRef<HTMLDivElement, Props>(
               ) : null}
             </tbody>
             <tfoot className="quote-totals">
+              <tr aria-hidden="true">
+                <td
+                  colSpan={4}
+                  className="border-0 p-0"
+                  style={{ borderTop: `1.5pt solid ${template.secondary}`, height: "1.2mm" }}
+                />
+              </tr>
               {[
-                ["SUBTOTAL", data.subtotal],
+                ["SUBTOTAL", itemSubtotal],
+                ...(Number(data.valor_transporte ?? 0) > 0 ? [["TRANSPORTE", data.valor_transporte] as [string, string | number]] : []),
                 [ivaLabel(data.iva_tasa), data.iva],
                 ["TOTAL", data.total],
               ].map(([label, amount]) => (
-                <tr key={label} className="break-inside-avoid">
+                <tr
+                  key={label}
+                  className={`break-inside-avoid ${label === "TOTAL" ? "font-bold" : ""}`}
+                  style={label === "TOTAL" ? { backgroundColor: template.light } : undefined}
+                >
+                  <td colSpan={2} className="border-0 px-0 py-[1mm]" aria-hidden="true" />
                   <th
-                    colSpan={3}
-                    className="border px-[2mm] py-[1mm] text-right font-bold"
+                    className={`w-[20%] border px-[1.5mm] py-[1mm] text-right ${label === "TOTAL" ? "font-bold" : "font-medium"}`}
                     style={{
-                      backgroundColor: template.light,
                       borderColor: template.border,
                       color: template.accent,
                     }}
@@ -443,7 +422,7 @@ export const CotizacionPDF = forwardRef<HTMLDivElement, Props>(
                     {label}
                   </th>
                   <td
-                    className="border px-[2mm] py-[1mm] text-right font-semibold"
+                    className={`w-[20%] border px-[1.5mm] py-[1mm] text-right ${label === "TOTAL" ? "font-bold" : "font-medium"}`}
                     style={{
                       borderColor: template.border,
                       color: template.accent,
@@ -456,18 +435,19 @@ export const CotizacionPDF = forwardRef<HTMLDivElement, Props>(
             </tfoot>
           </table>
 
-          <p className="mt-[2mm] text-[8pt] italic">{content.pricingNote}</p>
-
+          {typeof detail.pricing_note === "string" && detail.pricing_note.trim() ? <p className="mt-[1mm] text-[7pt] text-slate-600">{detail.pricing_note}</p> : null}
           <section className="mt-[2.5mm]">
             <h2
               className="mb-[1.5mm] text-[9pt] font-bold tracking-wide"
               style={{ color: template.accent }}
             >
-              CONDICIONES COMERCIALES
+              {String(configuration.commercial_terms_title ?? "CONDICIONES COMERCIALES")}
             </h2>
             <table className="w-full table-fixed border-collapse text-[7.5pt]">
               <tbody>
-                {commercialTerms.map(([term, getValue]) => (
+                {commercialTerms.map(([defaultTerm, getValue], index) => {
+                  const term = configuredTermLabels[index] ?? defaultTerm;
+                  return (
                   <tr key={term} className="break-inside-avoid">
                     <th
                       scope="row"
@@ -487,7 +467,7 @@ export const CotizacionPDF = forwardRef<HTMLDivElement, Props>(
                       {getValue(data)?.trim() ?? ""}
                     </td>
                   </tr>
-                ))}
+                );})}
                 {data.condiciones_comerciales?.trim() ? (
                   <tr className="break-inside-avoid">
                     <th
@@ -514,49 +494,21 @@ export const CotizacionPDF = forwardRef<HTMLDivElement, Props>(
           </section>
 
           <section className="mt-[4mm] grid grid-cols-2 gap-[12mm] break-inside-avoid text-center text-[7.5pt]">
-            <div className="flex flex-col items-center">
-              <div
-                className="mb-[1.5mm] h-[8mm] w-full border-b"
-                style={{ borderColor: template.accent }}
-              />
-              <strong className="text-[8pt]" style={{ color: template.accent }}>
-                Realizó:
-              </strong>
-              <strong>
-                {creatorMode === "preview"
-                  ? creatorName || "—"
-                  : "Juan José Hernández"}
-              </strong>
-              <span>
-                {creatorMode === "preview"
-                  ? data.creador?.cargo || "—"
-                  : "Analista Comercial"}
-              </span>
-              <span>
-                {creatorMode === "preview"
-                  ? `Cel: ${data.creador?.celular || "—"}`
-                  : "Cel: 317 718 3115"}
-              </span>
-              <span>
-                {creatorMode === "preview"
-                  ? `Email: ${data.creador?.email_contacto || "—"}`
-                  : "Email: comercial1@sterinova.co"}
-              </span>
-            </div>
-            <div className="flex flex-col items-center">
-              <div
-                className="mb-[1.5mm] h-[8mm] w-full border-b"
-                style={{ borderColor: template.accent }}
-              />
-              <strong className="text-[8pt]" style={{ color: template.accent }}>
-                Aprobó:
-              </strong>
-              <strong>Ing. Daniel Riveros</strong>
-              <span>Subgerente Comercial</span>
-              <span>Cel: 318 338 8210</span>
-              <span>Email: daniel.riveros@sterinova.co</span>
-            </div>
+            {(signatures.length ? signatures : [
+              { label: "Realizó", name: creatorMode === "preview" ? creatorName || "—" : "Juan José Hernández", role: creatorMode === "preview" ? data.creador?.cargo || "—" : "Analista Comercial", phone: creatorMode === "preview" ? data.creador?.celular || "" : "317 718 3115", email: creatorMode === "preview" ? data.creador?.email_contacto || "" : "comercial1@sterinova.co" },
+              { label: "Aprobó", name: "Ing. Daniel Riveros", role: "Subgerente Comercial", phone: "318 338 8210", email: "daniel.riveros@sterinova.co" },
+            ]).map((signature, index) => (
+              <div key={`${signature.label}-${index}`} className="flex flex-col items-center">
+                <div className="mb-[1.5mm] h-[8mm] w-full border-b" style={{ borderColor: template.accent }} />
+                <strong className="text-[8pt]" style={{ color: template.accent }}>{signature.label || "Firma"}:</strong>
+                <strong>{signature.name}</strong>
+                <span>{signature.role}</span>
+                {signature.phone ? <span>Cel: {signature.phone}</span> : null}
+                {signature.email ? <span>Email: {signature.email}</span> : null}
+              </div>
+            ))}
           </section>
+          {typeof configuration.footer_notes === "string" && configuration.footer_notes.trim() ? <p className="mt-[2mm] whitespace-pre-line text-[7pt] text-slate-600">{configuration.footer_notes}</p> : null}
 
           <footer className="mt-[2mm] flex flex-wrap items-center justify-between gap-2 border-t pt-[1mm] text-[6.5pt] text-slate-600 break-inside-avoid">
             <span>
@@ -564,7 +516,7 @@ export const CotizacionPDF = forwardRef<HTMLDivElement, Props>(
               {metadata?.versionLabel || "04"} |{" "}
               {metadata?.fechaVersion || "17-09-2026"}
             </span>
-            <span>STERINOVA | Documento controlado</span>
+            <span>{String(configuration.footer_text ?? "STERINOVA | Documento controlado")}</span>
           </footer>
         </div>
       </article>

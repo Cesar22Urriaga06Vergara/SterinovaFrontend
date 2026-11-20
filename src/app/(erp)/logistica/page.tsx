@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Plus, X } from "lucide-react";
 import { MaterialesEditor } from "@/components/logistica/MaterialesEditor";
+import { ActaServicioFases } from "@/components/logistica/ActaServicioFases";
 import {
   RegistroEventoOrdenModal,
   type EstadoEventoOrden,
@@ -45,10 +46,12 @@ export default function LogisticaPage() {
   const canCreateOrder = can("logistica.ordenes.crear") && canViewApprovedQuotes;
   const canRegisterReception = can("logistica.recepciones.registrar");
   const canChangeState = can("logistica.ordenes.cambiar_estado");
+  const canManageActa = canRegisterReception || can("logistica.despacho.ejecutar");
   const [materiales, setMateriales] = useState<MaterialRecibido[]>([
     nuevoMaterial(),
   ]);
   const [editOrder, setEditOrder] = useState<OrdenServicio | null>(null);
+  const [actaOrder, setActaOrder] = useState<OrdenServicio | null>(null);
   const [metodo, setMetodo] = useState("");
   const [conflict, setConflict] = useState(false);
   const [ordenes, setOrdenes] = useState<OrdenServicio[]>([]);
@@ -60,9 +63,11 @@ export default function LogisticaPage() {
   const [saving, setSaving] = useState(false);
   const [cotizacionId, setCotizacionId] = useState("");
   const [fechaProgramada, setFechaProgramada] = useState("");
-  const [conductor, setConductor] = useState("");
-  const [placa, setPlaca] = useState("");
+  const [conductorRecoleccionId, setConductorRecoleccionId] = useState("");
   const [observaciones, setObservaciones] = useState("");
+  const [formatos, setFormatos] = useState<"ACTA" | "ORDEN" | "AMBOS">("AMBOS");
+  const [conductores, setConductores] = useState<Array<{id:number;nombre_completo:string;placa_vehiculo:string|null;activo:boolean}>>([]);
+  const [ruta, setRuta] = useState<Record<string,string>>({});
   const [pdfPreview, setPdfPreview] = useState<{
     url: string;
     title: string;
@@ -84,8 +89,12 @@ export default function LogisticaPage() {
         ? api.get<Cotizacion[]>("/logistica/cotizaciones-aprobadas")
         : Promise.resolve({ data: [] as Cotizacion[] }),
     ]);
+    if (canRegisterReception) {
+      const conductoresRes = await api.get<Array<{id:number;nombre_completo:string;placa_vehiculo:string|null;activo:boolean}>>("/logistica/conductores");
+      setConductores(conductoresRes.data);
+    }
     return { ordenes: ordenesRes.data, aprobadas: aprobadasRes.data };
-  }, [canViewApprovedQuotes]);
+  }, [canViewApprovedQuotes, canRegisterReception, canCreateOrder]);
 
   useEffect(() => {
     let active = true;
@@ -146,15 +155,28 @@ export default function LogisticaPage() {
           version: editOrder.version,
           materiales,
           metodo_esterilizacion: metodo || undefined,
+          conductor_recoleccion_id: ruta.conductor_recoleccion_id ? Number(ruta.conductor_recoleccion_id) : null,
+          conductor_entrega_id: ruta.conductor_entrega_id ? Number(ruta.conductor_entrega_id) : null,
+          fecha_hora_recoleccion: ruta.fecha_hora_recoleccion || null,
+          lote_recoleccion: ruta.lote_recoleccion || null,
+          cajas_recibidas: ruta.cajas_recibidas ? Number(ruta.cajas_recibidas) : null,
+          cantidad_recibida: ruta.cantidad_recibida ? Number(ruta.cantidad_recibida) : null,
+          entregado_por_cliente: ruta.entregado_por_cliente || null,
+          recibido_por_sterinova: ruta.recibido_por_sterinova || null,
+          fecha_hora_entrega: ruta.fecha_hora_entrega || null,
+          cajas_entregadas: ruta.cajas_entregadas ? Number(ruta.cajas_entregadas) : null,
+          cantidad_entregada: ruta.cantidad_entregada ? Number(ruta.cantidad_entregada) : null,
+          certificado_asociado: ruta.certificado_asociado || null,
+          entregado_por_sterinova: ruta.entregado_por_sterinova || null,
+          recibido_por_cliente: ruta.recibido_por_cliente || null,
         });
       else
         await api.post("/logistica/ordenes", {
           materiales,
-          metodo_esterilizacion: metodo || undefined,
           cotizacion_id: Number(cotizacionId),
+          formatos,
           fecha_programada: fechaProgramada,
-          conductor_asignado: conductor || undefined,
-          vehiculo_placa: placa || undefined,
+          conductor_recoleccion_id: conductorRecoleccionId ? Number(conductorRecoleccionId) : undefined,
           observaciones: observaciones || undefined,
         });
       setModalOpen(false);
@@ -162,8 +184,7 @@ export default function LogisticaPage() {
       setMateriales([nuevoMaterial()]);
       setCotizacionId("");
       setFechaProgramada("");
-      setConductor("");
-      setPlaca("");
+      setConductorRecoleccionId("");
       setObservaciones("");
       await refreshData();
     } catch (cause) {
@@ -255,6 +276,8 @@ export default function LogisticaPage() {
     }
   }
 
+  const cotizacionSeleccionada = aprobadas.find((item) => item.id === Number(cotizacionId));
+
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
       <PageHeader
@@ -268,6 +291,10 @@ export default function LogisticaPage() {
               setConflict(false);
               setMateriales([nuevoMaterial()]);
               setMetodo("");
+              setCotizacionId("");
+              setConductorRecoleccionId("");
+              setFechaProgramada("");
+              setFormatos("AMBOS");
               setError("");
               setModalOpen(true);
             }}
@@ -367,6 +394,7 @@ export default function LogisticaPage() {
                                   : [nuevoMaterial()],
                               );
                               setMetodo(orden.metodo_esterilizacion ?? "");
+                              setRuta(Object.fromEntries(["conductor_recoleccion_id","conductor_entrega_id","fecha_hora_recoleccion","lote_recoleccion","cajas_recibidas","cantidad_recibida","entregado_por_cliente","recibido_por_sterinova","fecha_hora_entrega","cajas_entregadas","cantidad_entregada","certificado_asociado","entregado_por_sterinova","recibido_por_cliente"].map(k=>[k,(orden as unknown as Record<string,unknown>)[k]?.toString()??""])));
                               setModalOpen(true);
                             }}
                             className="block text-xs font-semibold text-secondary"
@@ -374,6 +402,7 @@ export default function LogisticaPage() {
                             Editar material recibido
                           </button>
                         ) : null}
+                        {canManageActa && orden.generar_acta !== false ? <button type="button" onClick={()=>setActaOrder(orden)} className="block text-xs font-semibold text-secondary">{orden.acta_cerrada_at ? "Ver Acta cerrada" : `Gestionar Acta · Fase ${orden.acta_fase??1}/3`}</button> : null}
                         <div className="flex flex-col gap-2">
                           <button
                             type="button"
@@ -470,6 +499,8 @@ export default function LogisticaPage() {
         />
       ) : null}
 
+      {actaOrder ? <ActaServicioFases key={`${actaOrder.id}-${actaOrder.version}`} orden={actaOrder} onClose={()=>setActaOrder(null)} onSaved={()=>void refreshData()}/> : null}
+
       {modalOpen ? (
         <Modal
           open
@@ -489,16 +520,21 @@ export default function LogisticaPage() {
                 <>
                   <label className="block text-sm">
                     <span className="mb-1 block font-medium text-surface-foreground">
-                      Cotización aprobada
+                      Cotización aceptada por el cliente
                     </span>
                     <select
                       required
                       value={cotizacionId}
                       onChange={(e) => {
                         setCotizacionId(e.target.value);
-                        const tipo = aprobadas.find(
-                          (q) => q.id === Number(e.target.value),
-                        )?.tipo_servicio;
+                        const quote = aprobadas.find((q) => q.id === Number(e.target.value));
+                        setConductorRecoleccionId("");
+                        const tipo = quote?.tipo_servicio;
+                        setMateriales(quote?.items?.length ? quote.items.map(item => ({
+                          ...nuevoMaterial(), cotizacion_item_id: item.id ?? null,
+                          descripcion: item.descripcion, referencia: item.referencia ?? null,
+                          cantidad: Number(item.cantidad),
+                        })) : []);
                         setMetodo(
                           tipo?.endsWith("_ETO")
                             ? "ETO"
@@ -518,13 +554,19 @@ export default function LogisticaPage() {
                         </option>
                       ))}
                     </select>
+                    <span className="mt-1 block text-xs text-surface-subtle">Solo cotizaciones en estado Aceptada por el cliente (ACEPTADA_CLIENTE).</span>
                     {aprobadas.length === 0 ? (
                       <p className="mt-1 text-xs text-secondary">
-                        No hay cotizaciones APROBADAS disponibles. Aprueba una
-                        en Comercial primero.
+                        No hay cotizaciones aceptadas por el cliente disponibles.
                       </p>
                     ) : null}
                   </label>
+
+                  {cotizacionSeleccionada ? <section aria-label="Resumen heredado de la cotización" className="grid gap-2 rounded-lg bg-background p-3 text-sm sm:grid-cols-3">
+                    <p><span className="font-semibold">Cliente:</span> {cotizacionSeleccionada.cliente?.razon_social ?? "—"}</p>
+                    <p><span className="font-semibold">Método:</span> {cotizacionSeleccionada.metodo_esterilizacion === "EtO" ? "EtO" : cotizacionSeleccionada.metodo_esterilizacion === "VAPOR" ? "Vapor" : "No aplica"}</p>
+                    <p><span className="font-semibold">Alcance:</span> {[cotizacionSeleccionada.aplica_esterilizacion && "Esterilización", cotizacionSeleccionada.aplica_empaque && "Empaque", cotizacionSeleccionada.aplica_transporte && "Transporte"].filter(Boolean).join(", ") || "No aplica"}</p>
+                  </section> : null}
 
                   <label className="block text-sm">
                     <span className="mb-1 block font-medium text-surface-foreground">
@@ -539,28 +581,12 @@ export default function LogisticaPage() {
                     />
                   </label>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="block text-sm">
-                      <span className="mb-1 block font-medium text-surface-foreground">
-                        Conductor (opcional)
-                      </span>
-                      <input
-                        value={conductor}
-                        onChange={(e) => setConductor(e.target.value)}
-                        className="w-full rounded-lg border border-surface-border bg-background px-3 py-2 text-surface-foreground outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/30"
-                      />
-                    </label>
-                    <label className="block text-sm">
-                      <span className="mb-1 block font-medium text-surface-foreground">
-                        Placa (opcional)
-                      </span>
-                      <input
-                        value={placa}
-                        onChange={(e) => setPlaca(e.target.value)}
-                        className="w-full rounded-lg border border-surface-border bg-background px-3 py-2 text-surface-foreground outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/30"
-                      />
-                    </label>
-                  </div>
+                  <label className="block text-sm">Conductor de recolección (opcional)
+                    <select value={conductorRecoleccionId} onChange={e=>setConductorRecoleccionId(e.target.value)} className="mt-1 w-full rounded-lg border border-surface-border bg-background px-3 py-2">
+                      <option value="">Sin asignar</option>
+                      {conductores.filter(c=>c.activo).map(c=><option key={c.id} value={c.id}>{c.nombre_completo}{c.placa_vehiculo ? ` — ${c.placa_vehiculo}` : ""}</option>)}
+                    </select>
+                  </label>
 
                   <label className="block text-sm">
                     <span className="mb-1 block font-medium text-surface-foreground">
@@ -574,6 +600,15 @@ export default function LogisticaPage() {
                     />
                   </label>
                 </>
+              ) : null}
+              {!editOrder ? (
+                <label className="block text-sm">Documentos a generar
+                  <select value={formatos} onChange={(e) => setFormatos(e.target.value as "ACTA" | "ORDEN" | "AMBOS")} className="mt-1 w-full rounded-lg border border-surface-border px-3 py-2">
+                    <option value="ACTA">Solo Acta de Servicio (R-LG-04)</option>
+                    <option value="ORDEN">Solo Orden de Servicio (R-ES-02)</option>
+                    <option value="AMBOS">Ambos formatos enlazados a la orden</option>
+                  </select>
+                </label>
               ) : null}
               {error ? (
                 <p role="alert" className="text-sm text-red-700">
@@ -593,7 +628,7 @@ export default function LogisticaPage() {
                   Recargar órdenes antes de volver a editar
                 </button>
               ) : null}
-              <label className="block text-sm">
+              {editOrder ? <label className="block text-sm">
                 Método de esterilización
                 <select
                   aria-label="Método de la orden"
@@ -605,12 +640,31 @@ export default function LogisticaPage() {
                   <option value="ETO">EtO</option>
                   <option value="VAPOR">Vapor</option>
                 </select>
-              </label>
+              </label> : null}
               <MaterialesEditor
                 value={materiales}
                 onChange={setMateriales}
-                disabled={saving || conflict}
+                disabled={saving || conflict || (!editOrder && !cotizacionSeleccionada)}
+                cotizacion={editOrder?.cotizacion}
+                modoCreacion={!editOrder}
+                cantidadEntregada={ruta.cantidad_entregada ? Number(ruta.cantidad_entregada) : null}
               />
+              {editOrder ? <fieldset className="grid gap-3 rounded-lg border p-3 sm:grid-cols-2"><legend className="px-1 text-sm font-semibold">Trazabilidad de rutas</legend>
+                <label>Conductor de recolección<select value={ruta.conductor_recoleccion_id||""} onChange={e=>setRuta({...ruta,conductor_recoleccion_id:e.target.value})} className="mt-1 w-full rounded border p-2"><option value="">Sin asignar</option>{conductores.filter(c=>c.activo).map(c=><option key={c.id} value={c.id}>{c.nombre_completo}</option>)}</select></label>
+                <label>Fecha/hora recolección<input type="datetime-local" value={ruta.fecha_hora_recoleccion||""} onChange={e=>setRuta({...ruta,fecha_hora_recoleccion:e.target.value})} className="mt-1 w-full rounded border p-2"/></label>
+                <label>Lote<input value={ruta.lote_recoleccion||""} onChange={e=>setRuta({...ruta,lote_recoleccion:e.target.value})} className="mt-1 w-full rounded border p-2"/></label>
+                <label>Cajas recibidas<input type="number" min="0" value={ruta.cajas_recibidas||""} onChange={e=>setRuta({...ruta,cajas_recibidas:e.target.value})} className="mt-1 w-full rounded border p-2"/></label>
+                <label>Cantidad recibida<input type="number" min="0" step="0.01" value={ruta.cantidad_recibida||""} onChange={e=>setRuta({...ruta,cantidad_recibida:e.target.value})} className="mt-1 w-full rounded border p-2"/></label>
+                <label>Entregado por (cliente)<input value={ruta.entregado_por_cliente||""} onChange={e=>setRuta({...ruta,entregado_por_cliente:e.target.value})} className="mt-1 w-full rounded border p-2"/></label>
+                <label>Recibido por (Sterinova)<input value={ruta.recibido_por_sterinova||""} onChange={e=>setRuta({...ruta,recibido_por_sterinova:e.target.value})} className="mt-1 w-full rounded border p-2"/></label>
+                <label>Conductor de entrega<select value={ruta.conductor_entrega_id||""} onChange={e=>setRuta({...ruta,conductor_entrega_id:e.target.value})} className="mt-1 w-full rounded border p-2"><option value="">Sin asignar</option>{conductores.filter(c=>c.activo).map(c=><option key={c.id} value={c.id}>{c.nombre_completo}</option>)}</select></label>
+                <label>Fecha/hora entrega<input type="datetime-local" value={ruta.fecha_hora_entrega||""} onChange={e=>setRuta({...ruta,fecha_hora_entrega:e.target.value})} className="mt-1 w-full rounded border p-2"/></label>
+                <label>Cajas entregadas<input type="number" min="0" value={ruta.cajas_entregadas||""} onChange={e=>setRuta({...ruta,cajas_entregadas:e.target.value})} className="mt-1 w-full rounded border p-2"/></label>
+                <label>Cantidad entregada<input type="number" min="0" step="0.01" value={ruta.cantidad_entregada||""} onChange={e=>setRuta({...ruta,cantidad_entregada:e.target.value})} className="mt-1 w-full rounded border p-2"/></label>
+                <label>Certificado asociado<input value={ruta.certificado_asociado||""} onChange={e=>setRuta({...ruta,certificado_asociado:e.target.value})} className="mt-1 w-full rounded border p-2"/></label>
+                <label>Entregado por (Sterinova)<input value={ruta.entregado_por_sterinova||""} onChange={e=>setRuta({...ruta,entregado_por_sterinova:e.target.value})} className="mt-1 w-full rounded border p-2"/></label>
+                <label>Recibido por (cliente)<input value={ruta.recibido_por_cliente||""} onChange={e=>setRuta({...ruta,recibido_por_cliente:e.target.value})} className="mt-1 w-full rounded border p-2"/></label>
+              </fieldset> : null}
               <div className="flex justify-end gap-2">
                 <button
                   type="button"

@@ -33,6 +33,7 @@ export type OrdenServicio = {
   consecutivo: string;
   acta_consecutivo?: string | null;
   cotizacion_id: number;
+  orden_compra_cliente?: string | null;
   fecha_programada: string;
   estado: EstadoOrdenServicio;
   conductor_asignado?: string | null;
@@ -40,6 +41,23 @@ export type OrdenServicio = {
   observaciones?: string | null;
   cotizacion?: Cotizacion;
   eventos?: EventoOrden[];
+  acta_fase?: 1 | 2 | 3;
+  generar_acta?: boolean;
+  acta_cerrada_at?: string | null;
+  fecha_hora_recoleccion?: string | null;
+  fecha_hora_entrega?: string | null;
+  conductor_recoleccion_id?: number | null;
+  conductor_entrega_id?: number | null;
+  entregado_por_cliente?: string | null;
+  recibido_por_sterinova?: string | null;
+  entregado_por_sterinova?: string | null;
+  recibido_por_cliente?: string | null;
+  certificado_no?: string | null;
+  factura_no?: string | null;
+  observaciones_recepcion?: string | null;
+  observaciones_cliente?: string | null;
+  novedad_tipo?: "ENTREGA_PARCIAL" | "DEVOLUCION_RECHAZO" | null;
+  novedad_motivo?: string | null;
 };
 
 export const ESTADO_COLORES: Record<EstadoOrdenServicio, string> = {

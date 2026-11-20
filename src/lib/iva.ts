@@ -2,8 +2,8 @@ export type IvaVersion = { id: number; version: number; tasa: string; vigente_de
 
 const round = (value: number) => Number(value.toFixed(2));
 
-export function quoteAmounts(items: { cantidad: number; valor_unitario: number }[], tasa: string) {
-  const subtotal = round(items.reduce((sum, item) => sum + round(item.cantidad * item.valor_unitario), 0));
+export function quoteAmounts(items: { cantidad: number; valor_unitario: number }[], tasa: string, transporte = 0) {
+  const subtotal = round(items.reduce((sum, item) => sum + round(item.cantidad * item.valor_unitario), 0) + transporte);
   const [whole, fraction = ''] = tasa.split('.');
   const scaledRate = BigInt(whole + fraction.padEnd(6, '0'));
   const product = BigInt(subtotal.toFixed(2).replace('.', '')) * scaledRate;

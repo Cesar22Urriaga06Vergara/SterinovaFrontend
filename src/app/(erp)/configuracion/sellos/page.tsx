@@ -29,8 +29,13 @@ export default function CertificationSealsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
+  const [editingSeal, setEditingSeal] = useState<SealRecord | null>(null);
   const [name, setName] = useState("");
   const [license, setLicense] = useState("");
+  const [appliesTo, setAppliesTo] = useState<string[]>([
+    "COTIZACION:INDUSTRIAL_ETO", "COTIZACION:INSTITUCIONAL_ETO", "COTIZACION:INSTITUCIONAL_VAPOR",
+    "COTIZACION:INSUMOS", "COTIZACION:LAVANDERIA", "COTIZACION:FARMACEUTICO", "COTIZACION:FABRICANTE",
+  ]);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -91,8 +96,20 @@ export default function CertificationSealsPage() {
   }, [seals]);
 
   function openUpload() {
+    setEditingSeal(null);
     setName("");
     setLicense("");
+    setAppliesTo(["COTIZACION:INDUSTRIAL_ETO", "COTIZACION:INSTITUCIONAL_ETO", "COTIZACION:INSTITUCIONAL_VAPOR", "COTIZACION:INSUMOS", "COTIZACION:LAVANDERIA", "COTIZACION:FARMACEUTICO", "COTIZACION:FABRICANTE"]);
+    setFile(null);
+    setError("");
+    setFormOpen(true);
+  }
+
+  function openEdit(seal: SealRecord) {
+    setEditingSeal(seal);
+    setName(seal.nombre_norma);
+    setLicense(seal.numero_licencia);
+    setAppliesTo(seal.aplica_a ?? []);
     setFile(null);
     setError("");
     setFormOpen(true);
@@ -100,21 +117,26 @@ export default function CertificationSealsPage() {
 
   async function uploadSeal(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!file) {
-      setError("Selecciona una imagen PNG o JPG.");
+    if (!file && !editingSeal) {
+      setError("Selecciona una imagen PNG, JPG o WEBP.");
       return;
     }
+    if (!appliesTo.length) { setError("Selecciona al menos un tipo de documento."); return; }
     const formData = new FormData();
     formData.append("nombre_norma", name.trim());
     formData.append("numero_licencia", license.trim());
-    formData.append("orden", String(seals.length + 1));
-    formData.append("imagen", file);
+    formData.append("aplica_a", JSON.stringify(appliesTo));
+    if (file) formData.append("imagen", file);
 
     setSaving(true);
     setError("");
     try {
-      await api.post("/sellos", formData);
-      setNotice(`Se agregó el sello ${name.trim()}.`);
+      if (editingSeal) await api.patch(`/sellos/${editingSeal.id}`, formData);
+      else {
+        formData.append("orden", String(seals.length + 1));
+        await api.post("/sellos", formData);
+      }
+      setNotice(editingSeal ? `Se actualizó el sello ${name.trim()}.` : `Se agregó el sello ${name.trim()}.`);
       setFormOpen(false);
       await loadSeals();
     } catch (uploadError) {
@@ -182,17 +204,22 @@ export default function CertificationSealsPage() {
         saving={saving}
         onMove={(id, direction) => void moveSeal(id, direction)}
         onToggle={(seal) => void toggleSeal(seal)}
+        onEdit={openEdit}
       />
 
       {formOpen ? (
         <UploadSealDialog
           name={name}
           license={license}
+          appliesTo={appliesTo}
+          editing={Boolean(editingSeal)}
+          currentImageUrl={editingSeal ? imageUrls[editingSeal.id] : undefined}
           file={file}
           saving={saving}
           error={error}
           onNameChange={setName}
           onLicenseChange={setLicense}
+          onAppliesToChange={setAppliesTo}
           onFileChange={setFile}
           onSubmit={(event) => void uploadSeal(event)}
           onClose={() => setFormOpen(false)}

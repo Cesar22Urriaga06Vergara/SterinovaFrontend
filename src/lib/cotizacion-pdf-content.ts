@@ -6,7 +6,6 @@ export type CotizacionPdfContent = {
   subtitle: string;
   nitLabel: string;
   paragraphs: [string, string];
-  pricingNote: string;
 };
 
 const commonInstitutionalIntroduction =
@@ -22,7 +21,6 @@ const serviceContent: Record<TipoServicioCotizacion, CotizacionPdfContent> = {
       "En atención a su solicitud, nos permitimos presentar nuestra cotización correspondiente al servicio de esterilización industrial con Óxido de Etileno (EtO) de Sterinova, dirigido al procesamiento de productos que requieren este método de esterilización. Nuestro servicio está orientado a brindar soluciones confiables y adaptadas a las características y necesidades de cada producto y proceso.",
       "A continuación, presentamos el alcance del servicio y las condiciones comerciales correspondientes a su solicitud.",
     ],
-    pricingNote: "Precios antes de {IVA}.",
   },
   INSTITUCIONAL_ETO: {
     documentCode: "R-CM-07-2",
@@ -30,10 +28,9 @@ const serviceContent: Record<TipoServicioCotizacion, CotizacionPdfContent> = {
     subtitle: "Cotización de Servicios",
     nitLabel: "NIT / C.C. / C.E. / OTRO:",
     paragraphs: [
-      commonInstitutionalIntroduction,
+      "En atención a su solicitud, nos permitimos presentar nuestra cotización correspondiente al servicio de esterilización institucional con Óxido de Etileno (EtO) de Sterinova, orientado a atender requerimientos de esterilización de productos compatibles con este método. Nuestro servicio brinda una solución oportuna y confiable de acuerdo con las necesidades y condiciones particulares de cada cliente.",
       "A continuación, presentamos el alcance del servicio y las condiciones comerciales correspondientes a su solicitud.",
     ],
-    pricingNote: "Precios antes de {IVA}.",
   },
   INSTITUCIONAL_VAPOR: {
     documentCode: "R-CM-07-3",
@@ -44,7 +41,6 @@ const serviceContent: Record<TipoServicioCotizacion, CotizacionPdfContent> = {
       commonInstitutionalIntroduction,
       "A continuación, presentamos el alcance del servicio y las condiciones comerciales correspondientes a su solicitud.",
     ],
-    pricingNote: "Precios antes de {IVA}.",
   },
   INSUMOS: {
     documentCode: "R-CM-07-4",
@@ -55,7 +51,6 @@ const serviceContent: Record<TipoServicioCotizacion, CotizacionPdfContent> = {
       "En atención a su solicitud, nos permitimos presentar nuestra cotización correspondiente a la línea de venta de insumos de Sterinova, especializada en soluciones para procesos de esterilización y monitoreo.",
       "A continuación, presentamos los productos y condiciones comerciales correspondientes a su solicitud.",
     ],
-    pricingNote: "Adicionar el valor del {IVA}.",
   },
   LAVANDERIA: {
     documentCode: "R-CM-07-5",
@@ -66,36 +61,29 @@ const serviceContent: Record<TipoServicioCotizacion, CotizacionPdfContent> = {
       "En atención a su solicitud, nos permitimos presentar nuestra cotización correspondiente al servicio de lavandería de dotación farmacéutica de Sterinova, orientado al lavado y acondicionamiento de prendas y elementos utilizados en ambientes farmacéuticos y áreas que requieren condiciones especiales de procesamiento.",
       "A continuación, presentamos el alcance del servicio y las condiciones comerciales correspondientes a su solicitud.",
     ],
-    pricingNote: "Precios antes de {IVA}",
   },
   FARMACEUTICO: {
-    documentCode: "",
-    title: "COTIZACIÓN FARMACÉUTICA",
-    subtitle: "Cotización",
+    documentCode: "R-CM-07-1",
+    title: "ESTERILIZACIÓN INDUSTRIAL",
+    subtitle: "Cotización de Servicios",
     nitLabel: "NIT / C.C. / C.E. / OTRO:",
     paragraphs: [
-      "En atención a su solicitud, presentamos esta cotización para los productos y servicios farmacéuticos descritos en el detalle.",
-      "A continuación, presentamos los conceptos y las condiciones comerciales correspondientes a su solicitud.",
+      "En atención a su solicitud, nos permitimos presentar nuestra cotización correspondiente al servicio de esterilización industrial con Óxido de Etileno (EtO) de Sterinova, dirigido al procesamiento de productos que requieren este método de esterilización. Nuestro servicio está orientado a brindar soluciones confiables y adaptadas a las características y necesidades de cada producto y proceso.",
+      "A continuación, presentamos el alcance del servicio y las condiciones comerciales correspondientes a su solicitud.",
     ],
-    pricingNote: "Precios antes de {IVA}.",
   },
   FABRICANTE: {
-    documentCode: "",
-    title: "COTIZACIÓN PARA FABRICANTE",
-    subtitle: "Cotización",
+    documentCode: "R-CM-07-1",
+    title: "ESTERILIZACIÓN INDUSTRIAL",
+    subtitle: "Cotización de Servicios",
     nitLabel: "NIT / C.C. / C.E. / OTRO:",
     paragraphs: [
-      "En atención a su solicitud, presentamos esta cotización para los productos y servicios descritos en el detalle.",
-      "A continuación, presentamos los conceptos y las condiciones comerciales correspondientes a su solicitud.",
+      "En atención a su solicitud, nos permitimos presentar nuestra cotización correspondiente al servicio de esterilización industrial con Óxido de Etileno (EtO) de Sterinova, dirigido al procesamiento de productos que requieren este método de esterilización. Nuestro servicio está orientado a brindar soluciones confiables y adaptadas a las características y necesidades de cada producto y proceso.",
+      "A continuación, presentamos el alcance del servicio y las condiciones comerciales correspondientes a su solicitud.",
     ],
-    pricingNote: "Precios antes de {IVA}.",
   },
 };
 
-export function getCotizacionPdfContent(
-  tipoServicio: TipoServicioCotizacion,
-  etiquetaIVA = "IVA (19%)",
-): CotizacionPdfContent {
-  const content=serviceContent[tipoServicio];
-  return {...content,pricingNote:content.pricingNote.replace("{IVA}",etiquetaIVA)};
+export function getCotizacionPdfContent(tipoServicio: TipoServicioCotizacion): CotizacionPdfContent {
+  return serviceContent[tipoServicio];
 }

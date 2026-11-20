@@ -10,6 +10,13 @@ export type MaterialRecibido = {
   muestras_retencion: number | null;
   muestras_cliente: number | null;
   muestras_laboratorio: number | null;
+  cantidad_recibida?: number | null;
+  cajas_recibidas?: number | null;
+  cantidad_entregada?: number | null;
+  cajas_entregadas?: number | null;
+  visto_bueno?: boolean | null;
+  devolucion_registrada?: boolean;
+  cantidad_devuelta?: number;
 };
 export type FilaProtocolo = {
   parametro: string;
@@ -50,6 +57,9 @@ export type FrozenSeal = {
   imagen_key: string;
   mime_type: string;
   imagen_src: string;
+  nombre_norma?: string;
+  numero_licencia?: string;
+  aplica_a?: string[] | null;
 };
 export type DocumentPerson = {
   id?: number;

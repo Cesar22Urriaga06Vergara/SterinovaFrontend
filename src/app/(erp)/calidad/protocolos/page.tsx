@@ -2,11 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { api } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/ui/states/ErrorState";
@@ -22,7 +21,6 @@ type ProtocoloConMeta = ProtocoloVersion & {
 export default function ProtocolosPage() {
   const { can } = useSession();
   const canView = can("planta.protocolos.ver");
-  const canManage = can("calidad.protocolos.gestionar");
   const [protocolos, setProtocolos] = useState<ProtocoloConMeta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -59,20 +57,6 @@ export default function ProtocolosPage() {
       <PageHeader
         title="Protocolos de Calidad"
         description="Versiones de protocolos de esterilización aplicables a los procesos de Planta."
-        actions={
-          canManage ? (
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                // Navegar a gestión de protocolos (pendiente de implementación)
-              }}
-            >
-              <Plus className="h-4 w-4" aria-hidden /> Gestionar Protocolo
-            </Button>
-          ) : null
-        }
       />
 
       {error ? (

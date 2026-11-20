@@ -13,30 +13,43 @@ import { Modal } from "@/components/ui/Modal";
 import { ErrorState } from "@/components/ui/states/ErrorState";
 import { TableState } from "@/components/ui/states/TableState";
 import { useSession } from "@/lib/session";
+import { buildRolesAmbitosViewModel } from "./view-model";
 
 type Role = { id: number; code: string; name: string; active: boolean };
-type Scope = { id: number; code: string; name: string; kind: string };
+type Scope = { id: number; code: string; name: string; kind: string; parentId?: number | null; active?: boolean };
 type RoleCatalogo = { roles: Role[]; scopes: Scope[] };
 type RoleAssignment = {
   id: number;
   user_id: number;
-  user: { id: number; nombre: string; apellido?: string | null; email: string };
-  role: Role;
-  scope: Scope;
-  activo: boolean;
+  role_id: number;
+  scope_id: number;
+  active: number | boolean;
+  code: string;
+  name: string;
+  kind: string;
+  role_active: number | boolean;
+  scope_name: string;
 };
 
+type ScopeForm = { code: string; name: string; kind: "DEPARTMENT" | "TEAM" | "PLANT"; parentId: string };
+const emptyScopeForm = (): ScopeForm => ({ code: "", name: "", kind: "DEPARTMENT", parentId: "" });
+
 export default function RolesAmbitosPage() {
-  const { can } = useSession();
-  const canManage = can("roles.gestionar") || can("ambitos.gestionar");
+  const { canManageGlobal } = useSession();
+  const canManageAssignments = canManageGlobal("asignaciones.gestionar");
+  const canManageScopes = canManageGlobal("ambitos.gestionar");
+  const canManage = canManageAssignments || canManageScopes;
   const [roles, setRoles] = useState<Role[]>([]);
   const [scopes, setScopes] = useState<Scope[]>([]);
   const [asignaciones, setAsignaciones] = useState<RoleAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [formOpen, setFormOpen] = useState(false);
+  const [scopeFormOpen, setScopeFormOpen] = useState(false);
+  const [scopeForm, setScopeForm] = useState<ScopeForm>(emptyScopeForm);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
+  const [scopeFormError, setScopeFormError] = useState("");
   const [userId, setUserId] = useState("");
   const [roleId, setRoleId] = useState("");
   const [scopeId, setScopeId] = useState("");
@@ -46,19 +59,33 @@ export default function RolesAmbitosPage() {
     setLoading(true);
     setError("");
     try {
-      const [rolesRes, assignmentsRes] = await Promise.all([
-        api.get<RoleCatalogo>("/users/role-catalog"),
-        api.get<RoleAssignment[]>("/users/role-assignments"),
+      const [rolesRes, assignmentsRes, scopesRes] = await Promise.all([
+        canManageAssignments ? api.get<RoleCatalogo>("/users/role-catalog") : Promise.resolve(null),
+        canManageAssignments ? api.get<RoleAssignment[]>("/users/role-assignments") : Promise.resolve(null),
+        canManageScopes ? api.get<Scope[]>("/ambitos") : Promise.resolve(null),
       ]);
-      setRoles(rolesRes.data.roles);
-      setScopes(rolesRes.data.scopes);
-      setAsignaciones(assignmentsRes.data ?? []);
+      const roleData = rolesRes?.data;
+      const listedScopes = Array.isArray(scopesRes?.data) ? scopesRes.data : undefined;
+      const catalogScopes = Array.isArray(roleData?.scopes) ? roleData.scopes : undefined;
+      const nextScopes = listedScopes?.length
+        ? listedScopes
+        : catalogScopes ?? listedScopes ?? [];
+      setRoles(Array.isArray(roleData?.roles) ? roleData.roles : []);
+      setScopes(nextScopes);
+      setAsignaciones(Array.isArray(assignmentsRes?.data) ? assignmentsRes.data : []);
+      const globalScope = nextScopes.find((scope) => scope.kind === "GLOBAL");
+      if (globalScope) {
+        setScopeForm((current) => ({
+          ...current,
+          parentId: current.parentId || String(globalScope.id),
+        }));
+      }
     } catch {
       setError("No se pudieron cargar roles, ámbitos y asignaciones.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [canManageAssignments, canManageScopes]);
 
   useEffect(() => {
     if (canManage) {
@@ -111,13 +138,53 @@ export default function RolesAmbitosPage() {
     }
   }
 
+  function openCreateScope() {
+    const globalScope = scopes.find((scope) => scope.kind === "GLOBAL");
+    setScopeForm({ ...emptyScopeForm(), parentId: String(globalScope?.id ?? 1) });
+    setScopeFormError("");
+    setScopeFormOpen(true);
+  }
+
+  async function handleCreateScope(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!canManageScopes || saving) return;
+    setScopeFormError("");
+    if (!scopeForm.code.trim() || !scopeForm.name.trim() || !scopeForm.parentId) {
+      setScopeFormError("Completa el código, el nombre y el ámbito padre.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const { data } = await api.post<Scope>("/ambitos", {
+        code: scopeForm.code.trim(),
+        name: scopeForm.name.trim(),
+        kind: scopeForm.kind,
+        parentId: scopeForm.parentId,
+      });
+      setScopes((current) => [...current, data]);
+      setScopeFormOpen(false);
+      setScopeForm(emptyScopeForm());
+      await loadData();
+    } catch (cause) {
+      setScopeFormError(cause instanceof Error ? cause.message : "No se pudo crear el ámbito.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const view = buildRolesAmbitosViewModel(scopes, canManageScopes);
+
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6">
       <PageHeader
         title="Roles y Ámbitos"
-        description="Catálogo de roles activos y asignaciones de usuarios a ámbitos. Solo SuperAdmin."
-        actions={
-          <Button
+        description="Administra ámbitos y asignaciones según tus permisos globales."
+        actions={(
+          <div className="flex flex-wrap gap-2">
+          {view.showCreateScope ? <Button type="button" variant="secondary" onClick={openCreateScope}>
+            <Plus className="h-4 w-4" aria-hidden /> {view.createScopeLabel}
+          </Button> : null}
+          {canManageAssignments ? <Button
             type="button"
             onClick={() => {
               setFormOpen(true);
@@ -125,8 +192,9 @@ export default function RolesAmbitosPage() {
             }}
           >
             <Plus className="h-4 w-4" aria-hidden /> Asignar Rol
-          </Button>
-        }
+          </Button> : null}
+          </div>
+        )}
       />
 
       {error ? (
@@ -143,13 +211,13 @@ export default function RolesAmbitosPage() {
             <Card>
               <div className="p-6">
                 <p className="text-sm font-semibold text-surface-subtle uppercase">Ámbitos</p>
-                <p className="mt-1 text-2xl font-bold text-surface-foreground">{scopes.length}</p>
+                <p className="mt-1 text-2xl font-bold text-surface-foreground">{view.scopeCount}</p>
               </div>
             </Card>
             <Card>
               <div className="p-6">
                 <p className="text-sm font-semibold text-surface-subtle uppercase">Asignaciones activas</p>
-                <p className="mt-1 text-2xl font-bold text-surface-foreground">{asignaciones.filter((a) => a.activo).length}</p>
+                <p className="mt-1 text-2xl font-bold text-surface-foreground">{asignaciones.filter((a) => Number(a.active) === 1 && Number(a.role_active) === 1).length}</p>
               </div>
             </Card>
           </div>
@@ -176,22 +244,22 @@ export default function RolesAmbitosPage() {
                     asignaciones.map((a) => (
                       <tr key={a.id} className="text-surface-foreground hover:bg-background/60 transition-colors">
                         <td className="px-4 py-3 font-medium">
-                          {a.user.nombre} {a.user.apellido ?? ""} ({a.user.email})
+                          Usuario #{a.user_id}
                         </td>
                         <td className="px-4 py-3">
-                          <Badge variant="info">{a.role.code}</Badge>
+                          <Badge variant="info">{a.code}</Badge>
                         </td>
-                        <td className="px-4 py-3">{a.scope.name}</td>
+                        <td className="px-4 py-3">{a.scope_name}</td>
                         <td className="px-4 py-3 text-surface-subtle text-xs">
-                          {a.scope.kind}
+                          {a.kind}
                         </td>
                         <td className="px-4 py-3">
-                          <Badge variant={a.activo ? "success" : "neutral"}>
-                            {a.activo ? "Activo" : "Inactivo"}
+                          <Badge variant={Number(a.active) === 1 && Number(a.role_active) === 1 ? "success" : "neutral"}>
+                            {Number(a.active) === 1 && Number(a.role_active) === 1 ? "Activo" : "Inactivo"}
                           </Badge>
                         </td>
                         <td className="px-4 py-3">
-                          {a.activo ? (
+                          {a.id !== 0 && Number(a.active) === 1 && Number(a.role_active) === 1 ? (
                             <Button
                               type="button"
                               variant="danger"
@@ -206,6 +274,36 @@ export default function RolesAmbitosPage() {
                       </tr>
                     ))
                   )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
+          <Card className="overflow-hidden">
+            <div className="border-b border-surface-border px-6 py-4">
+              <h2 className="font-semibold text-surface-foreground">Ámbitos registrados</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-surface-border text-left text-sm">
+                <thead className="bg-background text-surface-foreground">
+                  <tr>
+                    <th className="px-4 py-3 font-semibold text-surface-subtle text-xs uppercase">Código</th>
+                    <th className="px-4 py-3 font-semibold text-surface-subtle text-xs uppercase">Nombre</th>
+                    <th className="px-4 py-3 font-semibold text-surface-subtle text-xs uppercase">Tipo</th>
+                    <th className="px-4 py-3 font-semibold text-surface-subtle text-xs uppercase">Estado</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-surface-border/60 bg-surface">
+                  {loading ? <TableState colSpan={4} message="Cargando ámbitos..." loading /> : view.scopeCount === 0 ? (
+                    <TableState colSpan={4} message="No hay ámbitos registrados. Crea el primer ámbito operativo." />
+                  ) : scopes.map((scope) => (
+                    <tr key={scope.id}>
+                      <td className="px-4 py-3 font-mono">{scope.code}</td>
+                      <td className="px-4 py-3">{scope.name}</td>
+                      <td className="px-4 py-3">{scope.kind}</td>
+                      <td className="px-4 py-3">{scope.active === false ? "Inactivo" : "Activo"}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -236,7 +334,7 @@ export default function RolesAmbitosPage() {
                 />
                 <Select
                   label="Ámbito"
-                  options={scopes.map((s) => ({ value: String(s.id), label: `${s.name} (${s.kind})` }))}
+                  options={view.scopeOptions}
                   value={scopeId}
                   onChange={(e) => setScopeId(e.target.value)}
                   placeholder="Selecciona un ámbito"
@@ -256,6 +354,27 @@ export default function RolesAmbitosPage() {
                   >
                     {saving ? "Asignando..." : "Asignar Rol"}
                   </button>
+                </div>
+              </form>
+            </Modal>
+          ) : null}
+
+          {scopeFormOpen && canManageScopes ? (
+            <Modal open title="Crear ámbito operativo" onClose={() => { if (!saving) setScopeFormOpen(false); }}>
+              <form onSubmit={handleCreateScope} className="space-y-4">
+                <Input label="Código" required maxLength={100} value={scopeForm.code} onChange={(event) => setScopeForm((current) => ({ ...current, code: event.target.value }))} />
+                <Input label="Nombre" required maxLength={160} value={scopeForm.name} onChange={(event) => setScopeForm((current) => ({ ...current, name: event.target.value }))} />
+                <Select label="Tipo de ámbito" options={[
+                  { value: "DEPARTMENT", label: "Departamento" },
+                  { value: "TEAM", label: "Equipo" },
+                  { value: "PLANT", label: "Planta" },
+                ]} value={scopeForm.kind} onChange={(event) => setScopeForm((current) => ({ ...current, kind: event.target.value as ScopeForm["kind"] }))} />
+                <Select label="Ámbito padre" options={view.parentScopeOptions} value={scopeForm.parentId} onChange={(event) => setScopeForm((current) => ({ ...current, parentId: event.target.value }))} placeholder="Selecciona un ámbito padre" />
+                {scopes.length === 0 ? <p className="text-sm text-surface-subtle">El ámbito global raíz será el padre del primer ámbito operativo.</p> : null}
+                {scopeFormError ? <p role="alert" className="text-sm text-error">{scopeFormError}</p> : null}
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="ghost" onClick={() => setScopeFormOpen(false)} disabled={saving}>Cancelar</Button>
+                  <Button type="submit" loading={saving} disabled={saving}>Crear ámbito</Button>
                 </div>
               </form>
             </Modal>

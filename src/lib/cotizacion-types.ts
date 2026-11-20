@@ -66,12 +66,17 @@ export type CotizacionItem = {
 };
 
 export type Cotizacion = {
-  sellos?:{icontec:FrozenSeal};
+  sellos?: { icontec?: FrozenSeal | null; certificaciones?: FrozenSeal[] };
   version?: number;
   id: number;
   consecutivo: string;
   fecha: string;
   tipo_servicio: TipoServicioCotizacion;
+  metodo_esterilizacion?: 'EtO' | 'VAPOR' | 'NO_APLICA';
+  aplica_esterilizacion?: boolean;
+  aplica_empaque?: boolean;
+  aplica_transporte?: boolean;
+  valor_transporte?: number | string;
   estado: string;
   aprobador_interno_id?: number | null;
   aprobado_internamente_at?: string | null;

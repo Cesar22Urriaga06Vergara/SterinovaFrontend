@@ -24,7 +24,7 @@ function loadTypeScript(relativePath) {
 test("expone los siete tipos de cotización y sus prefijos del backend", () => {
   const { TIPOS_SERVICIO } = loadTypeScript("src/lib/cotizacion-types.ts");
   const quotePage = readFileSync(
-    path.join(root, "src/components/cotizaciones/CotizacionForm.tsx"),
+    path.join(root, "src/components/cotizaciones/CotizacionConfiguracionSection.tsx"),
     "utf8",
   );
   const templatesPage = readFileSync(
@@ -157,8 +157,8 @@ test("administración de usuarios usa permisos RBAC y emite un enlace de restabl
     "utf8",
   );
 
-  assert.match(usersPage, /can\("usuarios\.identidad\.gestionar"\)/);
-  assert.match(usersPage, /can\("asignaciones\.gestionar"\)/);
+  assert.match(usersPage, /canManageGlobal\("usuarios\.identidad\.gestionar"\)/);
+  assert.match(usersPage, /canManageGlobal\("asignaciones\.gestionar"\)/);
   assert.match(usersPage, /\/users\/\$\{passwordUser\.id\}\/password\/reset/);
   assert.doesNotMatch(usersPage, /\/users\/\$\{passwordUser\.id\}\/password`/);
   assert.match(resetPage, /\/auth\/password\/reset/);

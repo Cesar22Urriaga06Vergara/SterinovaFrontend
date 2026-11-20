@@ -1,0 +1,12 @@
+import { TIPOS_SERVICIO, type TipoServicioCotizacion } from "@/lib/cotizacion-types";
+export function CotizacionConfiguracionSection({ tipoServicio, onChange, metodo, onMetodo, alcance, onAlcance, transporte, onTransporte }: { tipoServicio: TipoServicioCotizacion; onChange: (value: TipoServicioCotizacion) => void; metodo: 'EtO'|'VAPOR'|'NO_APLICA'; onMetodo:(v:'EtO'|'VAPOR'|'NO_APLICA')=>void; alcance:{aplica_esterilizacion:boolean;aplica_empaque:boolean;aplica_transporte:boolean}; onAlcance:(k:keyof typeof alcance,v:boolean)=>void; transporte:string; onTransporte:(v:string)=>void }) {
+  return <section className="rounded-xl bg-surface p-5 shadow-sm ring-1 ring-surface-border"><h2 className="text-lg font-semibold text-surface-foreground">2. Configuración</h2>
+    <label className="mt-3 block text-sm"><span className="mb-1 block font-medium text-surface-foreground">Tipo de cotización</span>
+      <select value={tipoServicio} onChange={(e) => onChange(e.target.value as TipoServicioCotizacion)} className="w-full rounded-lg border border-surface-border bg-background px-3 py-2 text-surface-foreground outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/30">
+        {TIPOS_SERVICIO.map((tipo) => <option key={tipo.value} value={tipo.value}>{tipo.label} · {tipo.prefix}</option>)}
+      </select>
+    </label>
+    <div className="mt-4 grid gap-3 sm:grid-cols-2"><label className="text-sm">Método de esterilización<select value={metodo} onChange={e=>onMetodo(e.target.value as typeof metodo)} className="mt-1 w-full rounded-lg border border-surface-border bg-background px-3 py-2"><option value="EtO">EtO</option><option value="VAPOR">Vapor</option><option value="NO_APLICA">No aplica</option></select></label>{(['aplica_esterilizacion','aplica_empaque','aplica_transporte'] as const).map((key)=><label key={key} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={alcance[key]} onChange={e=>onAlcance(key,e.target.checked)}/>{key==='aplica_esterilizacion'?'Esterilización':key==='aplica_empaque'?'Empaque y esterilización':'Transporte'}</label>)}</div>
+    {alcance.aplica_transporte&&<label className="mt-3 block text-sm">Valor de transporte<input type="number" min="0" step="0.01" value={transporte} onChange={e=>onTransporte(e.target.value)} className="mt-1 w-full rounded-lg border border-surface-border bg-background px-3 py-2"/></label>}
+  </section>;
+}

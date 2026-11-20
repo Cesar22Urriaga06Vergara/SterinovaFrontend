@@ -24,10 +24,10 @@ function errorMessage(error: unknown, fallback: string): string {
 }
 
 export default function UsersPage() {
-  const { user: sessionUser, can } = useSession();
+  const { user: sessionUser, can, canManageGlobal } = useSession();
   const canViewUsers = can("usuarios.ver");
-  const canManageIdentity = can("usuarios.identidad.gestionar");
-  const canManageAssignments = can("asignaciones.gestionar");
+  const canManageIdentity = canManageGlobal("usuarios.identidad.gestionar");
+  const canManageAssignments = canManageGlobal("asignaciones.gestionar");
   const canCreateUsers = canManageIdentity && canManageAssignments;
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [assignments, setAssignments] = useState<RoleAssignment[]>([]);
@@ -46,16 +46,19 @@ export default function UsersPage() {
 
   const fetchUsers = useCallback(async () => {
     if (!canViewUsers) throw new Error("No tienes permiso para consultar usuarios.");
-    const [accounts, profiles, roleCatalog] = await Promise.all([
-      api.get<UserRecord[]>("/users"),
-      canManageAssignments
-        ? api.get<RoleAssignment[]>("/users/role-assignments")
-        : Promise.resolve({ data: [] as RoleAssignment[] }),
-      canManageAssignments
-        ? api.get<{ roles: Role[]; scopes: Scope[] }>("/users/role-catalog")
-        : Promise.resolve({ data: { roles: [], scopes: [] } }),
+    const { data: accounts } = await api.get<UserRecord[]>("/users");
+    if (!canManageAssignments) {
+      return { users: accounts, assignments: [] as RoleAssignment[], catalog: { roles: [], scopes: [] } };
+    }
+    const [profiles, roleCatalog] = await Promise.allSettled([
+      api.get<RoleAssignment[]>("/users/role-assignments"),
+      api.get<{ roles: Role[]; scopes: Scope[] }>("/users/role-catalog"),
     ]);
-    return { users: accounts.data, assignments: profiles.data, catalog: roleCatalog.data };
+    return {
+      users: accounts,
+      assignments: profiles.status === "fulfilled" ? profiles.value.data : [],
+      catalog: roleCatalog.status === "fulfilled" ? roleCatalog.value.data : { roles: [], scopes: [] },
+    };
   }, [canManageAssignments, canViewUsers]);
 
   const loadUsers = useCallback(async () => {

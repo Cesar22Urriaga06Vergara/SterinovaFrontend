@@ -70,17 +70,15 @@ const contentByService = [
       "En atención a su solicitud, nos permitimos presentar nuestra cotización correspondiente al servicio de esterilización industrial con Óxido de Etileno (EtO) de Sterinova, dirigido al procesamiento de productos que requieren este método de esterilización. Nuestro servicio está orientado a brindar soluciones confiables y adaptadas a las características y necesidades de cada producto y proceso.",
       "A continuación, presentamos el alcance del servicio y las condiciones comerciales correspondientes a su solicitud.",
     ],
-    pricingNote: "Precios antes de IVA (19%).",
   },
   {
     type: "INSTITUCIONAL_ETO",
     code: "R-CM-07-2",
     title: "ESTERILIZACIÓN INSTITUCIONAL EtO",
     paragraphs: [
-      "En atención a su solicitud, nos permitimos presentar nuestra cotización correspondiente al servicio de esterilización institucional con vapor de Sterinova, orientado a atender requerimientos de esterilización de productos compatibles con este método, especialmente en situaciones de contingencia. Nuestro servicio busca brindar una solución oportuna y confiable, de acuerdo con las necesidades y condiciones particulares de cada cliente.",
+      "En atención a su solicitud, nos permitimos presentar nuestra cotización correspondiente al servicio de esterilización institucional con Óxido de Etileno (EtO) de Sterinova, orientado a atender requerimientos de esterilización de productos compatibles con este método. Nuestro servicio brinda una solución oportuna y confiable de acuerdo con las necesidades y condiciones particulares de cada cliente.",
       "A continuación, presentamos el alcance del servicio y las condiciones comerciales correspondientes a su solicitud.",
     ],
-    pricingNote: "Precios antes de IVA (19%).",
   },
   {
     type: "INSTITUCIONAL_VAPOR",
@@ -90,7 +88,6 @@ const contentByService = [
       "En atención a su solicitud, nos permitimos presentar nuestra cotización correspondiente al servicio de esterilización institucional con vapor de Sterinova, orientado a atender requerimientos de esterilización de productos compatibles con este método, especialmente en situaciones de contingencia. Nuestro servicio busca brindar una solución oportuna y confiable, de acuerdo con las necesidades y condiciones particulares de cada cliente.",
       "A continuación, presentamos el alcance del servicio y las condiciones comerciales correspondientes a su solicitud.",
     ],
-    pricingNote: "Precios antes de IVA (19%).",
   },
   {
     type: "INSUMOS",
@@ -100,7 +97,6 @@ const contentByService = [
       "En atención a su solicitud, nos permitimos presentar nuestra cotización correspondiente a la línea de venta de insumos de Sterinova, especializada en soluciones para procesos de esterilización y monitoreo.",
       "A continuación, presentamos los productos y condiciones comerciales correspondientes a su solicitud.",
     ],
-    pricingNote: "Adicionar el valor del IVA (19%).",
   },
   {
     type: "LAVANDERIA",
@@ -110,7 +106,6 @@ const contentByService = [
       "En atención a su solicitud, nos permitimos presentar nuestra cotización correspondiente al servicio de lavandería de dotación farmacéutica de Sterinova, orientado al lavado y acondicionamiento de prendas y elementos utilizados en ambientes farmacéuticos y áreas que requieren condiciones especiales de procesamiento.",
       "A continuación, presentamos el alcance del servicio y las condiciones comerciales correspondientes a su solicitud.",
     ],
-    pricingNote: "Precios antes de IVA (19%)",
   },
 ];
 
@@ -120,20 +115,19 @@ for (const expected of contentByService) {
     assert.equal(actual.documentCode, expected.code);
     assert.equal(actual.title, expected.title);
     assert.deepEqual([...actual.paragraphs], expected.paragraphs);
-    assert.equal(actual.pricingNote, expected.pricingNote);
+    assert.equal(Object.hasOwn(actual, "pricingNote"), false);
   });
 }
 
-test("renderiza los tipos FARMACEUTICO y FABRICANTE sin códigos de formato inventados", () => {
-  for (const [type, title] of [
-    ["FARMACEUTICO", "COTIZACIÓN FARMACÉUTICA"],
-    ["FABRICANTE", "COTIZACIÓN PARA FABRICANTE"],
-  ]) {
+test("FARMACEUTICO y FABRICANTE comparten el formato aprobado R-CM-07-1", () => {
+  const contents = ["FARMACEUTICO", "FABRICANTE"].map((type) => {
     const content = compiledModule.exports.getCotizacionPdfContent(type);
-    assert.equal(content.title, title);
-    assert.equal(content.documentCode, "");
+    assert.equal(content.title, "ESTERILIZACIÓN INDUSTRIAL");
+    assert.equal(content.documentCode, "R-CM-07-1");
     assert.equal(content.paragraphs.length, 2);
-  }
+    return content;
+  });
+  assert.deepEqual(contents[0], contents[1]);
 });
 
 test("mantiene la ruta interna imprimible en flujo para admitir varias páginas", () => {
@@ -156,8 +150,10 @@ test("aplica las paletas oficiales de los cinco formatos", () => {
 });
 
 test("la tabla dinámica solo renderiza los ítems de la cotización", () => {
-  assert.match(cotizacionPdfComponent, /data\.items\?\.map/);
-  assert.match(cotizacionPdfComponent, /REFERENCIA \/ DESCRIPCIÓN/);
+  assert.match(cotizacionPdfComponent, /\(data\.items \?\? \[\]\)\.filter/);
+  assert.match(cotizacionPdfComponent, /cells\.map/);
+  assert.match(cotizacionPdfComponent, /\{columns\[0\] \?\? "DESCRIPCIÓN"\}/);
+  assert.match(cotizacionPdfComponent, /No hay ítems registrados/);
   assert.doesNotMatch(cotizacionPdfComponent, /Rollo plano PGM|BOLSA PRECORTADA/);
 });
 
@@ -168,7 +164,7 @@ test("las cotizaciones multipágina conservan encabezados y totales sin repetirl
 });
 
 test("ajusta descripciones de procedimientos extensas y permite saltos de línea", () => {
-  assert.match(cotizacionPdfComponent, /whitespace-pre-line break-words border px-\[2mm\] py-\[1\.1mm\]/);
+  assert.match(cotizacionPdfComponent, /whitespace-pre-line break-words border px-\[1\.5mm\] py-\[1\.1mm\]/);
   assert.match(cotizacionPdfComponent, /whitespace-pre-line break-words border px-\[2mm\] py-\[0\.8mm\]/);
 });
 
@@ -198,4 +194,38 @@ test("reconstruye los datos de QR y de la orden desde los certificados históric
     certificate.cicloEsterilizacion.orden.cotizacion.items[0].descripcion,
     "Bata",
   );
+});
+
+test("conserva el transporte al reconstruir la cotización de una vista previa PDF", () => {
+  const quote = pdfRenderDataModule.exports.cotizacionFromPdfSnapshot({
+    documento: { consecutivo: "COT-001" },
+    cliente: { id: 1 },
+    cotizacion: {
+      tipo_servicio: "INDUSTRIAL_ETO",
+      subtotal: 25000,
+      valor_transporte: 15000,
+      aplica_transporte: true,
+      iva: 4750,
+      total: 29750,
+      items: [],
+    },
+  });
+  assert.equal(quote.valor_transporte, 15000);
+  assert.equal(quote.aplica_transporte, true);
+});
+
+test("recupera el transporte si el snapshot solo conserva el subtotal combinado", () => {
+  const quote = pdfRenderDataModule.exports.cotizacionFromPdfSnapshot({
+    documento: { consecutivo: "COT-002" },
+    cliente: { id: 1 },
+    cotizacion: {
+      tipo_servicio: "INDUSTRIAL_ETO",
+      subtotal: 25000,
+      iva: 4750,
+      total: 29750,
+      items: [{ descripcion: "Servicio", cantidad: 1, valor_unitario: 10000, valor_total: 10000 }],
+    },
+  });
+  assert.equal(quote.valor_transporte, 15000);
+  assert.equal(quote.aplica_transporte, true);
 });

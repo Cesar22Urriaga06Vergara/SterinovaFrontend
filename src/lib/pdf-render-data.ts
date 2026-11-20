@@ -8,6 +8,7 @@ export type PdfFormatMetadata = {
   versionLabel: string;
   fechaVersion: string;
   title?: string;
+  configuration?: Record<string, unknown>;
 };
 
 export function formatMetadataFromSnapshot(formato: Snapshot): PdfFormatMetadata {
@@ -19,11 +20,21 @@ export function formatMetadataFromSnapshot(formato: Snapshot): PdfFormatMetadata
     versionLabel: String(config.version_label ?? formato.version ?? ''),
     fechaVersion: dateParts ? `${dateParts[3]}-${dateParts[2]}-${dateParts[1]}` : rawDate,
     title: typeof config.title === 'string' ? config.title : undefined,
+    configuration: config,
   };
 }
 
 export function cotizacionFromPdfSnapshot(snapshot: Snapshot): Cotizacion {
   const quote = (snapshot.cotizacion ?? {}) as Record<string, unknown>;
+  const items = (quote.items ?? []) as Cotizacion['items'];
+  const snapshotSubtotal = Number(quote.subtotal ?? 0);
+  const itemsSubtotal = (items ?? []).reduce((sum, item) => sum + Number(item.valor_total ?? 0), 0);
+  // Older running API instances and persisted preview snapshots may not include
+  // valor_transporte even though subtotal already contains it. Recover the
+  // distinct amount from the frozen line totals so the PDF still reconciles.
+  const transporte = quote.valor_transporte == null
+    ? Math.max(0, Number((snapshotSubtotal - itemsSubtotal).toFixed(2)))
+    : Number(quote.valor_transporte);
   const document = (snapshot.documento ?? {}) as Record<string, unknown>;
   const cliente = snapshot.cliente as Cotizacion['cliente'];
   return {
@@ -31,12 +42,17 @@ export function cotizacionFromPdfSnapshot(snapshot: Snapshot): Cotizacion {
     consecutivo: String(document.consecutivo ?? ''),
     fecha: String(quote.fecha ?? ''),
     tipo_servicio: quote.tipo_servicio as TipoServicioCotizacion,
+    metodo_esterilizacion: quote.metodo_esterilizacion as Cotizacion['metodo_esterilizacion'],
+    aplica_esterilizacion: Boolean(quote.aplica_esterilizacion),
+    aplica_empaque: Boolean(quote.aplica_empaque),
+    aplica_transporte: Boolean(quote.aplica_transporte) || transporte > 0,
+    valor_transporte: transporte,
     estado: 'EMITIDA',
     sellos:snapshot.sellos as Cotizacion['sellos'],
     fecha_emision: typeof document.fecha_emision === 'string' ? document.fecha_emision : null,
     cliente_id: Number(cliente?.id ?? 0),
     cliente,
-    items: (quote.items ?? []) as Cotizacion['items'],
+    items,
     subtotal: (quote.subtotal ?? 0) as Cotizacion['subtotal'],
     iva: (quote.iva ?? 0) as Cotizacion['iva'],
     iva_tasa: quote.iva_tasa as Cotizacion['iva_tasa'],

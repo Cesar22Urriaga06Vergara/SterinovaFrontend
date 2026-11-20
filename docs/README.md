@@ -2,6 +2,8 @@
 
 La documentación complementaria del backend está en el [índice del Backend](../../Sterinova-Backend/docs/README.md).
 
+El análisis de requisitos frontend y su matriz de cobertura viven en la [fuente central de requisitos](../../Sterinova-Backend/docs/requisitos/frontend/README.md); las reglas de negocio y contratos API continúan siendo canónicos en Backend.
+
 ## Contexto progresivo
 
 Empieza por [contexto rápido](CONTEXTO_RAPIDO.md); usa el [mapa de estructura](ESTRUCTURA_FRONTEND.md) para localizar archivos. Abre solo la documentación y el código relacionados con la tarea. No cargues planes, reportes ni documentos del backend automáticamente.

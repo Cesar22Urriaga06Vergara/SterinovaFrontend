@@ -15,7 +15,9 @@ type Session = {
 };
 const SessionContext = createContext<(Session & {
   ready: boolean;
+  loading: boolean;
   can: (permission: string) => boolean;
+  canManageGlobal: (permission: string) => boolean;
   selectScope: (id: number) => void;
 }) | null>(null);
 
@@ -65,7 +67,17 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       value={{
         ...activeSession,
         ready,
+        loading: !ready,
         can: (permission) => activeSession.permissions.includes(permission),
+        canManageGlobal: (permission) => {
+          if (!activeSession.permissions.includes(permission)) return false;
+          const globalScope = activeSession.available_scopes.find((scope) => scope.kind === "GLOBAL");
+          if (!globalScope) return false;
+          if (activeSession.current_scope && activeSession.current_scope.id !== globalScope.id) return false;
+          return activeSession.capabilities.some((capability) =>
+            capability.permission === permission && capability.scope_ids.includes(globalScope.id),
+          );
+        },
         selectScope: (id) => {
           setSession(null);
           void refresh(id);

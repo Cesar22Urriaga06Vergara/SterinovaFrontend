@@ -8,6 +8,7 @@ export type SealRecord = {
   imagen_key: string;
   activo: boolean;
   orden: number;
+  aplica_a: string[] | null;
 };
 
 export function SealsTable({
@@ -17,6 +18,7 @@ export function SealsTable({
   saving,
   onMove,
   onToggle,
+  onEdit,
 }: {
   seals: SealRecord[];
   imageUrls: Record<number, string>;
@@ -24,6 +26,7 @@ export function SealsTable({
   saving: boolean;
   onMove: (id: number, direction: -1 | 1) => void;
   onToggle: (seal: SealRecord) => void;
+  onEdit: (seal: SealRecord) => void;
 }) {
   const orderedSeals = [...seals].sort((a, b) => a.orden - b.orden || a.id - b.id);
 
@@ -43,6 +46,7 @@ export function SealsTable({
               <th className="w-24 px-5 py-3 font-semibold">Imagen</th>
               <th className="px-5 py-3 font-semibold">Norma</th>
               <th className="px-5 py-3 font-semibold">Número de licencia</th>
+              <th className="px-5 py-3 font-semibold">Aplica a</th>
               <th className="px-5 py-3 font-semibold">Estado</th>
               <th className="px-5 py-3 font-semibold">Orden</th>
               <th className="px-5 py-3 text-right font-semibold">Acciones</th>
@@ -50,9 +54,9 @@ export function SealsTable({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {loading ? (
-              <tr><td colSpan={6} className="px-5 py-10 text-center text-slate-500">Cargando sellos…</td></tr>
+              <tr><td colSpan={7} className="px-5 py-10 text-center text-slate-500">Cargando sellos…</td></tr>
             ) : orderedSeals.length === 0 ? (
-              <tr><td colSpan={6} className="px-5 py-10 text-center text-slate-500">Todavía no se han cargado sellos.</td></tr>
+              <tr><td colSpan={7} className="px-5 py-10 text-center text-slate-500">Todavía no se han cargado sellos.</td></tr>
             ) : orderedSeals.map((seal, index) => (
               <tr key={seal.id} className="hover:bg-slate-50/70">
                 <td className="px-5 py-3">
@@ -60,12 +64,14 @@ export function SealsTable({
                 </td>
                 <td className="px-5 py-4 font-semibold text-surface-foreground">{seal.nombre_norma}</td>
                 <td className="px-5 py-4 text-slate-600">{seal.numero_licencia}</td>
+                <td className="px-5 py-4 text-xs text-slate-600">{seal.aplica_a?.map((value) => value.replace('COTIZACION:', '').replaceAll('_', ' ')).join(', ') || 'Sin tipos asignados'}</td>
                 <td className="px-5 py-4"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${seal.activo ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-600"}`}>{seal.activo ? "Activo" : "Inactivo"}</span></td>
                 <td className="px-5 py-4 tabular-nums text-slate-600">{seal.orden}</td>
                 <td className="px-5 py-4">
                   <div className="flex justify-end gap-2">
                     <button type="button" onClick={() => onMove(seal.id, -1)} disabled={saving || index === 0} aria-label={`Subir ${seal.nombre_norma}`} title="Subir" className="rounded-md border border-slate-200 p-1.5 text-slate-600 hover:bg-slate-50 disabled:opacity-40"><ArrowUp className="h-4 w-4" aria-hidden /></button>
                     <button type="button" onClick={() => onMove(seal.id, 1)} disabled={saving || index === orderedSeals.length - 1} aria-label={`Bajar ${seal.nombre_norma}`} title="Bajar" className="rounded-md border border-slate-200 p-1.5 text-slate-600 hover:bg-slate-50 disabled:opacity-40"><ArrowDown className="h-4 w-4" aria-hidden /></button>
+                    <button type="button" onClick={() => onEdit(seal)} disabled={saving} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700">Editar</button>
                     <button type="button" onClick={() => onToggle(seal)} disabled={saving} className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50">
                       {seal.activo ? <ShieldOff className="h-3.5 w-3.5" aria-hidden /> : <ShieldCheck className="h-3.5 w-3.5" aria-hidden />}
                       {seal.activo ? "Desactivar" : "Activar"}

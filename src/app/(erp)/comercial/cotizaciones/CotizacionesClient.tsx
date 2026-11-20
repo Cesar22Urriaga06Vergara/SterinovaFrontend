@@ -113,24 +113,6 @@ export default function CotizacionesPage() {
     }
   }
 
-  async function handleEnviar(cotizacion: Cotizacion) {
-    if (!can("cotizaciones.enviar")) return;
-    setEmittingId(cotizacion.id);
-    setError("");
-    setSuccess("");
-    try {
-      const { data } = await api.post<Cotizacion>(
-        `/cotizaciones/${cotizacion.id}/enviar`, undefined, { headers },
-      );
-      setSuccess(`Cotización ${data.consecutivo} enviada exitosamente.`);
-      await loadCotizaciones();
-    } catch {
-      setError(`No se pudo enviar ${cotizacion.consecutivo}.`);
-    } finally {
-      setEmittingId(null);
-    }
-  }
-
   async function handlePreview(cotizacion: Cotizacion) {
     if (!can("cotizaciones.previsualizar")) return;
     setDownloadingId(cotizacion.id);
@@ -181,6 +163,18 @@ export default function CotizacionesPage() {
       );
     } finally {
       setApprovingId(null);
+    }
+  }
+
+  async function handleAceptar(cotizacion: Cotizacion) {
+    setError(""); setSuccess("");
+    try {
+      const { data } = await api.post<Cotizacion>(`/cotizaciones/${cotizacion.id}/aceptar`, undefined, { headers });
+      setSuccess(`Aceptación del cliente registrada para ${data.consecutivo}.`);
+      await loadCotizaciones();
+    } catch (cause) {
+      const message = (cause as {response?:{data?:{message?:string|string[]}}}).response?.data?.message;
+      setError(Array.isArray(message) ? message.join(". ") : message || `No se pudo registrar la aceptación de ${cotizacion.consecutivo}.`);
     }
   }
 
@@ -261,15 +255,6 @@ export default function CotizacionesPage() {
                                 <Send className="h-3.5 w-3.5" aria-hidden />
                                 {emittingId === cotizacion.id ? "Emitiendo..." : "Emitir Cotización"}
                               </button>}
-                              {can("cotizaciones.enviar") && isInternallyApproved(cotizacion) && !emitted && <button
-                                type="button"
-                                onClick={() => void handleEnviar(cotizacion)}
-                                disabled={emittingId !== null || downloadingId !== null}
-                                className="inline-flex items-center gap-1.5 rounded-control border border-secondary/40 px-2.5 py-1.5 text-xs font-medium text-secondary transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                <Send className="h-3.5 w-3.5" aria-hidden />
-                                {emittingId === cotizacion.id ? "Enviando..." : "Enviar al Cliente"}
-                              </button>}
                               {can("cotizaciones.previsualizar") && <button
                                 type="button"
                                 onClick={() => void handlePreview(cotizacion)}
@@ -303,6 +288,7 @@ export default function CotizacionesPage() {
                               {approvingId === cotizacion.id ? "Aprobando..." : "Aprobar"}
                             </button>
                           ) : null}
+                          {can("cotizaciones.aceptar") && cotizacion.fecha_emision && cotizacion.estado === "APROBADA" && <button type="button" onClick={()=>void handleAceptar(cotizacion)} className="rounded-control border border-secondary px-2.5 py-1.5 text-xs font-medium text-secondary">Registrar aceptación</button>}
                         </div>
                       </td>
                     </tr>

@@ -9,6 +9,7 @@ export function BrandLogo({ stacked = false }: { stacked?: boolean }) {
       alt="Sterinova"
       width={stacked ? 144 : 190}
       height={stacked ? 141 : 42}
+      style={{ width: "auto", height: "auto" }}
       className="mx-auto block h-auto max-w-full object-contain"
     />
   );

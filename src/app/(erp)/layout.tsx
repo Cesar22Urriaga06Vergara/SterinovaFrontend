@@ -50,7 +50,8 @@ function AuthorizedErpLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const user = useStoredUser();
-  const { can, permissions, ready } = useSession();
+  const { can, canManageGlobal, permissions, ready } = useSession();
+  const canManageGlobalRolesOrScopes = canManageGlobal("asignaciones.gestionar") || canManageGlobal("ambitos.gestionar");
   const quoteRoute =
     pathname === "/comercial/cotizaciones" ||
     pathname.startsWith("/comercial/cotizaciones/");
@@ -58,7 +59,7 @@ function AuthorizedErpLayout({ children }: { children: React.ReactNode }) {
     ? can(
         pathname.endsWith("/nueva") ? "cotizaciones.crear" : "cotizaciones.ver",
       )
-    : canAccessPath(pathname, permissions);
+    : canAccessPath(pathname, permissions, canManageGlobalRolesOrScopes);
   const hydrated = useSyncExternalStore(
     subscribeToStorage,
     getClientHydrationSnapshot,

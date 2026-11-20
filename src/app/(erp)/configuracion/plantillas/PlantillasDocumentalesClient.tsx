@@ -35,6 +35,9 @@ type TemplateVersion = {
     paragraphs?: string[];
     commercial_terms?: string[];
     signatures?: TemplateSignature[];
+    subtitle?: string;
+    footer_notes?: string;
+    detail?: { title?: string; columns?: string[]; pricing_note?: string };
     [key: string]: unknown;
   };
 };
@@ -52,6 +55,7 @@ type DocumentTemplate = {
   tipo_servicio: string | null;
   codigo: string;
   nombre: string;
+  cliente_id: number | null;
   versiones: TemplateVersion[];
 };
 
@@ -68,7 +72,15 @@ type EditorState = {
   introduccion: string;
   condiciones_comerciales: string;
   firmas: string;
+  subtitulo: string;
+  columnas: string;
+  titulo_detalle: string;
+  nota_precios: string;
+  pie_notas: string;
+  cliente_id: string;
 };
+
+type CustomerOption = { id: number; razon_social: string };
 
 const serviceOptions = [
   ["INDUSTRIAL_ETO", "Esterilización Industrial"],
@@ -94,6 +106,12 @@ const emptyEditor = (): EditorState => ({
   introduccion: "",
   condiciones_comerciales: "",
   firmas: "",
+  subtitulo: "",
+  columnas: "DESCRIPCIÓN\nCANTIDAD\nVALOR UNITARIO\nVALOR TOTAL",
+  titulo_detalle: "DETALLE DE COTIZACIÓN:",
+  nota_precios: "Precios antes de IVA (19%).",
+  pie_notas: "",
+  cliente_id: "",
 });
 
 const documentTypeOptions: Array<[DocumentType, string]> = [
@@ -138,6 +156,7 @@ function toEditor(
   version: TemplateVersion,
 ): EditorState {
   const config = version.configuracion_json;
+  const detail = config.detail ?? {};
   const signatures = Array.isArray(config.signatures)
     ? config.signatures
         .map((signature) =>
@@ -164,6 +183,12 @@ function toEditor(
     introduccion: config.paragraphs?.join("\n") ?? "",
     condiciones_comerciales: config.commercial_terms?.join("\n") ?? "",
     firmas: signatures,
+    subtitulo: String(config.subtitle ?? ""),
+    columnas: Array.isArray(detail.columns) ? detail.columns.join("\n") : "DESCRIPCIÓN\nCANTIDAD\nVALOR UNITARIO\nVALOR TOTAL",
+    titulo_detalle: String(detail.title ?? "DETALLE DE COTIZACIÓN:"),
+    nota_precios: String(detail.pricing_note ?? ""),
+    pie_notas: String(config.footer_notes ?? ""),
+    cliente_id: String(format.cliente_id ?? ""),
   };
 }
 
@@ -219,6 +244,8 @@ export default function PlantillasDocumentalesClient() {
     formatId: number;
     versionId: number;
   } | null>(null);
+  const [cloneMode, setCloneMode] = useState(false);
+  const [customers, setCustomers] = useState<CustomerOption[]>([]);
 
   const loadTemplates = useCallback(async () => {
     const { data } = await api.get<DocumentTemplate[]>("/formatos-documentales");
@@ -252,12 +279,28 @@ export default function PlantillasDocumentalesClient() {
 
   function startCreate() {
     setEditing(null);
+    setCloneMode(false);
     setFormOpen(true);
     setEditor(emptyEditor());
     setError("");
   }
 
+  async function startClone(format: DocumentTemplate, version: TemplateVersion) {
+    setEditing(null);
+    setCloneMode(true);
+    setFormOpen(true);
+    setEditor({ ...toEditor(format, version), clave: `${format.clave}_CLIENTE`, cliente_id: "" });
+    setError("");
+    try {
+      const { data } = await api.get<CustomerOption[]>("/clientes");
+      setCustomers(data.filter((customer) => Number.isInteger(customer.id) && customer.razon_social));
+    } catch {
+      setError("No se pudieron cargar clientes para asignar el formato.");
+    }
+  }
+
   function startEdit(format: DocumentTemplate, version: TemplateVersion) {
+    setCloneMode(false);
     setEditing({ formatId: format.id, versionId: version.id });
     setFormOpen(true);
     setEditor(toEditor(format, version));
@@ -297,6 +340,11 @@ export default function PlantillasDocumentalesClient() {
       introduccion: editor.introduccion,
       condiciones_comerciales: editor.condiciones_comerciales,
       firmas: signaturePayload(editor.firmas),
+      subtitulo: editor.subtitulo.trim(),
+      columnas: editor.columnas.split(/\r?\n/).map((line) => line.trim()).filter(Boolean),
+      titulo_detalle: editor.titulo_detalle.trim(),
+      nota_precios: editor.nota_precios.trim(),
+      pie_notas: editor.pie_notas,
     };
 
     try {
@@ -309,6 +357,7 @@ export default function PlantillasDocumentalesClient() {
         await api.post("/formatos-documentales", {
           ...payload,
           clave: editor.clave,
+          ...(editor.cliente_id ? { cliente_id: Number(editor.cliente_id) } : {}),
           tipo_documento: editor.tipo_documento,
           tipo_servicio:
             editor.tipo_documento === "COTIZACION"
@@ -420,7 +469,7 @@ export default function PlantillasDocumentalesClient() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-secondary">
-                    {format.codigo} · {format.clave}
+                    {format.codigo} · {format.clave}{format.cliente_id ? " · Formato por cliente" : " · Estándar"}
                   </p>
                   <h2 className="mt-1 text-xl font-bold text-surface-foreground">
                     {format.nombre}
@@ -471,6 +520,7 @@ export default function PlantillasDocumentalesClient() {
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-2">
+                        {canCreateTemplate && format.tipo_documento === "COTIZACION" ? <button type="button" onClick={() => void startClone(format, version)} className="inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm">Clonar para cliente</button> : null}
                         {version.estado === "BORRADOR" && canEditVersion ? (
                           <button
                             type="button"
@@ -510,6 +560,7 @@ export default function PlantillasDocumentalesClient() {
             {editing ? "Editar versión borrador" : "Crear plantilla"}
           </h2>
           <form onSubmit={handleSubmit} className="mt-4 grid gap-4 md:grid-cols-2">
+            {cloneMode ? <label className="text-sm md:col-span-2"><span className="mb-1 block font-medium">Cliente de este formato</span><select required value={editor.cliente_id} onChange={(event) => { const id = event.target.value; updateEditor("cliente_id", id); updateEditor("clave", id ? `${editor.clave.split("_CLIENTE")[0]}_CLIENTE_${id}` : `${editor.clave.split("_CLIENTE")[0]}_CLIENTE`); }} className="w-full rounded-lg border px-3 py-2"><option value="">Selecciona un cliente</option>{customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.razon_social}</option>)}</select></label> : null}
             {!editing ? (
               <>
                 <label className="text-sm">
@@ -633,6 +684,10 @@ export default function PlantillasDocumentalesClient() {
               />
             </label>
             <label className="text-sm md:col-span-2">
+              <span className="mb-1 block font-medium">Subtítulo</span>
+              <input value={editor.subtitulo} onChange={(event) => updateEditor("subtitulo", event.target.value)} className="w-full rounded-lg border px-3 py-2" />
+            </label>
+            <label className="text-sm md:col-span-2">
               <span className="mb-1 block font-medium">Introducción</span>
               <textarea
                 rows={4}
@@ -642,6 +697,18 @@ export default function PlantillasDocumentalesClient() {
                 }
                 className="w-full rounded-lg border px-3 py-2"
               />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block font-medium">Columnas visibles (cuatro, una por línea)</span>
+              <textarea required rows={4} value={editor.columnas} onChange={(event) => updateEditor("columnas", event.target.value)} className="w-full rounded-lg border px-3 py-2" />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block font-medium">Título del detalle</span>
+              <input value={editor.titulo_detalle} onChange={(event) => updateEditor("titulo_detalle", event.target.value)} className="w-full rounded-lg border px-3 py-2" />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block font-medium">Nota de precios / IVA</span>
+              <input value={editor.nota_precios} onChange={(event) => updateEditor("nota_precios", event.target.value)} className="w-full rounded-lg border px-3 py-2" />
             </label>
             <label className="text-sm md:col-span-2">
               <span className="mb-1 block font-medium">
@@ -655,6 +722,10 @@ export default function PlantillasDocumentalesClient() {
                 }
                 className="w-full rounded-lg border px-3 py-2"
               />
+            </label>
+            <label className="text-sm md:col-span-2">
+              <span className="mb-1 block font-medium">Pie y notas del documento</span>
+              <textarea rows={3} value={editor.pie_notas} onChange={(event) => updateEditor("pie_notas", event.target.value)} className="w-full rounded-lg border px-3 py-2" />
             </label>
             <label className="text-sm md:col-span-2">
               <span className="mb-1 block font-medium">
@@ -672,6 +743,7 @@ export default function PlantillasDocumentalesClient() {
                 type="button"
                 onClick={() => {
                   setEditing(null);
+                  setCloneMode(false);
                   setFormOpen(false);
                   setEditor(emptyEditor());
                 }}

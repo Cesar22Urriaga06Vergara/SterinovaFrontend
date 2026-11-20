@@ -1,0 +1,8 @@
+import { COMMERCIAL_CONDITIONS, type CommercialConditionField, type CommercialConditions } from "./cotizacion-draft.types";
+export function CotizacionCondicionesSection({ values, notas, onChange, onNotesChange }: { values: CommercialConditions; notas: string; onChange: (field: CommercialConditionField, value: string) => void; onNotesChange: (value: string) => void }) {
+  return <section className="rounded-xl bg-surface p-5 shadow-sm ring-1 ring-surface-border"><h2 className="text-lg font-semibold text-surface-foreground">3. Condiciones comerciales</h2>
+    <p className="mt-1 text-sm text-secondary">Puedes guardar el borrador y completar estos datos antes de solicitar aprobación.</p>
+    <div className="mt-4 grid gap-4 md:grid-cols-2">{COMMERCIAL_CONDITIONS.map(([label, field]) => <label key={field} className="block text-sm"><span className="mb-1 block font-medium text-surface-foreground">{label}</span><textarea rows={3} value={values[field]} onChange={(e) => onChange(field, e.target.value)} className="w-full rounded-lg border border-surface-border bg-background px-3 py-2 text-surface-foreground outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/30" /></label>)}</div>
+    <label className="mt-4 block text-sm"><span className="mb-1 block font-medium text-surface-foreground">Notas comerciales adicionales (opcional)</span><textarea rows={3} value={notas} onChange={(e) => onNotesChange(e.target.value)} className="w-full rounded-lg border border-surface-border bg-background px-3 py-2 text-surface-foreground outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/30" /></label>
+  </section>;
+}

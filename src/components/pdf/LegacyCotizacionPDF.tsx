@@ -305,33 +305,24 @@ export const LegacyCotizacionPDF = forwardRef<HTMLDivElement, Props>(
               ) : null}
             </tbody>
             <tfoot className="quote-totals">
+              <tr aria-hidden="true">
+                <td colSpan={4} className="border-0 p-0" style={{ borderTop: `1.5pt solid ${template.secondary}`, height: "1.2mm" }} />
+              </tr>
               {[
+                ...(Number(data.valor_transporte ?? 0) > 0 ? [["TRANSPORTE", data.valor_transporte] as [string, string | number]] : []),
                 ["SUBTOTAL", data.subtotal],
                 [ivaLabel(data.iva_tasa), data.iva],
                 ["TOTAL", data.total],
-              ].map(([label, amount]) => (
-                <tr key={label} className="break-inside-avoid">
-                  <th
-                    colSpan={3}
-                    className="border px-[2mm] py-[1mm] text-right font-bold"
-                    style={{ backgroundColor: template.light, borderColor: template.border, color: template.accent }}
-                  >
-                    {label}
-                  </th>
-                  <td
-                    className="border px-[2mm] py-[1mm] text-right font-semibold"
-                    style={{ borderColor: template.border, color: template.accent }}
-                  >
-                    {formatearMoneda(amount)}
-                  </td>
-                </tr>
-              ))}
+              ].map(([label, amount]) => {
+                const isTotal = label === "TOTAL";
+                return <tr key={label} className={`break-inside-avoid ${isTotal ? "font-bold" : ""}`} style={isTotal ? { backgroundColor: template.light } : undefined}>
+                  <td colSpan={2} className="border-0 px-0 py-[1mm]" aria-hidden="true" />
+                  <th className={`w-[20%] border px-[1.5mm] py-[1mm] text-right ${isTotal ? "font-bold" : "font-medium"}`} style={{ borderColor: template.border, color: template.accent }}>{label}</th>
+                  <td className={`w-[20%] border px-[1.5mm] py-[1mm] text-right ${isTotal ? "font-bold" : "font-medium"}`} style={{ borderColor: template.border, color: template.accent }}>{formatearMoneda(amount)}</td>
+                </tr>;
+              })}
             </tfoot>
           </table>
-
-          <p className="mt-[2mm] text-[8pt] italic">
-            {content.pricingNote}
-          </p>
 
           <section className="mt-[2.5mm]">
             <h2

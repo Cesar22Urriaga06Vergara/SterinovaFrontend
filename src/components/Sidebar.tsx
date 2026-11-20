@@ -48,7 +48,7 @@ type SidebarProps = {
 
 export function Sidebar({ mobileOpen, onNavigate }: SidebarProps) {
   const pathname = usePathname();
-  const { permissions } = useSession();
+  const { permissions, canManageGlobal } = useSession();
   const [isMobileViewport, setIsMobileViewport] = useState(false);
 
   useEffect(() => {
@@ -59,7 +59,8 @@ export function Sidebar({ mobileOpen, onNavigate }: SidebarProps) {
     return () => mediaQuery.removeEventListener("change", updateViewport);
   }, []);
 
-  const sections = getVisibleNavigationSections(permissions);
+  const canManageGlobalRolesOrScopes = canManageGlobal("asignaciones.gestionar") || canManageGlobal("ambitos.gestionar");
+  const sections = getVisibleNavigationSections(permissions, canManageGlobalRolesOrScopes);
   const hrefs = sections.flatMap((section) => section.links.map((link) => link.href));
   const activeHref = getActiveNavigationHref(pathname, hrefs);
 

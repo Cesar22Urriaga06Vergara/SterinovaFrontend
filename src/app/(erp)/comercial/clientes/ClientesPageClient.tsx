@@ -13,26 +13,16 @@ import { LoadingState } from "@/components/ui/states/LoadingState";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { useSession } from "@/lib/session";
 import type { Cliente } from "@/lib/cliente-types";
+import { clienteFormPayload, clienteToForm, emptyClienteForm } from "@/lib/cliente-form";
 import {
   ClienteImportacion,
   mapClienteExcelRow,
 } from "@/lib/cliente-import";
 
-const emptyForm = {
-  razon_social: "",
-  nit: "",
-  contacto: "",
-  telefono: "",
-  email: "",
-  direccion: "",
-};
-
 export default function ClientesPage() {
   const { permissions } = useSession();
   const canCreate = permissions.includes("clientes.crear");
   const canImport = permissions.includes("clientes.importar");
-  const canActivar = permissions.includes("clientes.activar");
-  const canInactivar = permissions.includes("clientes.inactivar");
   const canEdit = permissions.includes("clientes.editar");
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,7 +31,7 @@ export default function ClientesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(emptyClienteForm);
   const [importing, setImporting] = useState(false);
   const [success, setSuccess] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -50,7 +40,7 @@ export default function ClientesPage() {
   function closeModal() {
     setModalOpen(false);
     setEditingCliente(null);
-    setForm(emptyForm);
+    setForm(emptyClienteForm());
   }
 
   async function loadClientes() {
@@ -97,13 +87,13 @@ export default function ClientesPage() {
     setError("");
     try {
       if (editingCliente) {
-        await api.put(`/clientes/${editingCliente.id}`, form);
+        await api.put(`/clientes/${editingCliente.id}`, clienteFormPayload(form));
         setSuccess("Cliente actualizado correctamente.");
       } else {
-        await api.post("/clientes", form);
+        await api.post("/clientes", clienteFormPayload(form));
         setSuccess("Cliente creado correctamente.");
       }
-      setForm(emptyForm);
+      setForm(emptyClienteForm());
       setEditingCliente(null);
       setModalOpen(false);
       await loadClientes();
@@ -118,7 +108,7 @@ export default function ClientesPage() {
   async function toggleStatus(cliente: Cliente) {
     setError("");
     try {
-      await api.patch(`/clientes/${cliente.id}`, { activo: !(cliente.activo ?? true) });
+      await api.put(`/clientes/${cliente.id}`, { activo: !(cliente.activo ?? true) });
       await loadClientes();
     } catch (saveError) {
       setError(getApiErrorMessage(saveError));
@@ -260,12 +250,14 @@ export default function ClientesPage() {
       ) : (
         <div className="overflow-hidden rounded-card border border-surface-border bg-surface shadow-sm">
           <div className="overflow-x-auto">
-          <table className="min-w-[900px] w-full divide-y divide-surface-border text-left text-body">
+          <table className="min-w-[1050px] w-full divide-y divide-surface-border text-left text-body">
             <thead className="bg-background text-surface-foreground">
               <tr>
                 <th className="px-4 py-3 text-caption font-semibold uppercase tracking-wide">ID</th>
                 <th className="px-4 py-3 text-caption font-semibold uppercase tracking-wide">Razón Social</th>
                 <th className="px-4 py-3 text-caption font-semibold uppercase tracking-wide">NIT</th>
+                <th className="px-4 py-3 text-caption font-semibold uppercase tracking-wide">Cargo</th>
+                <th className="px-4 py-3 text-caption font-semibold uppercase tracking-wide">Ciudad</th>
                 <th className="px-4 py-3 text-caption font-semibold uppercase tracking-wide">Contacto</th>
                 <th className="px-4 py-3 text-caption font-semibold uppercase tracking-wide">Teléfono</th>
                 <th className="px-4 py-3 text-caption font-semibold uppercase tracking-wide">Email</th>
@@ -278,6 +270,8 @@ export default function ClientesPage() {
                   <td className="px-4 py-3">{cliente.id}</td>
                   <td className="px-4 py-3 font-medium">{cliente.razon_social}</td>
                   <td className="px-4 py-3">{cliente.nit}</td>
+                  <td className="px-4 py-3">{cliente.cargo || "—"}</td>
+                  <td className="px-4 py-3">{cliente.ciudad || "—"}</td>
                   <td className="px-4 py-3">{cliente.contacto}</td>
                   <td className="px-4 py-3">{cliente.telefono}</td>
                   <td className="px-4 py-3">{cliente.email}</td>
@@ -287,14 +281,7 @@ export default function ClientesPage() {
                         type="button"
                         onClick={() => {
                           setEditingCliente(cliente);
-                          setForm({
-                            razon_social: cliente.razon_social,
-                            nit: cliente.nit,
-                            contacto: cliente.contacto,
-                            telefono: cliente.telefono,
-                            email: cliente.email,
-                            direccion: cliente.direccion,
-                          });
+                          setForm(clienteToForm(cliente));
                           setError("");
                           setSuccess("");
                           setModalOpen(true);
@@ -308,7 +295,7 @@ export default function ClientesPage() {
                         Editar
                       </Button>
                     )}
-                    {(canActivar || canInactivar) && cliente.activo != null && (
+                    {canEdit && cliente.activo != null && (
                       <Button
                         type="button"
                         onClick={() => void toggleStatus(cliente)}
@@ -343,6 +330,8 @@ export default function ClientesPage() {
             [
               ["razon_social", "Razón Social"],
               ["nit", "NIT"],
+              ["cargo", "Cargo"],
+              ["ciudad", "Ciudad"],
               ["contacto", "Contacto"],
               ["telefono", "Teléfono"],
               ["email", "Email"],
@@ -354,7 +343,7 @@ export default function ClientesPage() {
                 id={`cliente-${key}`}
                 name={key}
                 label={label}
-                required={key !== "email"}
+                required={!['email', 'cargo', 'ciudad'].includes(key)}
                 type={key === "email" ? "email" : "text"}
                 value={form[key]}
                 onChange={(event) =>

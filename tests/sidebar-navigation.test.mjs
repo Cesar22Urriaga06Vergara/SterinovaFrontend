@@ -31,6 +31,10 @@ test("las rutas operativas y documentales comprueban la capacidad específica", 
   assert.equal(canAccessPath('/planta', ['planta.ciclos.ver']), true);
   assert.equal(canAccessPath('/planta/ciclo/nuevo', ['planta.ordenes.ver']), false);
   assert.equal(canAccessPath('/planta/ciclo/nuevo', ['planta.ciclos.crear']), true);
+  assert.equal(canAccessPath('/calidad/protocolos', ['planta.protocolos.ver']), true);
+  assert.equal(canAccessPath('/calidad/protocolos', ['calidad.ciclos.ver']), false);
+  assert.equal(canAccessPath('/administracion/roles-ambitos', ['roles.gestionar']), false);
+  assert.equal(canAccessPath('/administracion/roles-ambitos', [], true), true);
 });
 
 test("muestra rutas de módulos usando permisos RBAC en vez del rol legacy", () => {
@@ -44,6 +48,7 @@ test("muestra rutas de módulos usando permisos RBAC en vez del rol legacy", () 
   assert.ok(links.some((link) => link.href === "/comercial/clientes"));
   assert.ok(links.some((link) => link.href === "/comercial/productos"));
   assert.ok(links.some((link) => link.href === "/comercial/cotizaciones"));
+  assert.ok(links.some((link) => link.href === "/calidad/protocolos" && link.permission === "planta.protocolos.ver"));
   assert.ok(usersLink);
   assert.equal(usersLink.permission, "usuarios.ver");
 
@@ -68,6 +73,18 @@ test("muestra rutas de módulos usando permisos RBAC en vez del rol legacy", () 
       .some((link) => link.href === "/comercial"),
     false,
   );
+  assert.equal(
+    getVisibleNavigationSections(["roles.gestionar"])
+      .flatMap((section) => section.links)
+      .some((link) => link.href === "/administracion/roles-ambitos"),
+    false,
+  );
+  assert.equal(
+    getVisibleNavigationSections([], true)
+      .flatMap((section) => section.links)
+      .some((link) => link.href === "/administracion/roles-ambitos"),
+    true,
+  );
 });
 
 test("organiza tareas por sección y combina permisos sin duplicar accesos", () => {
@@ -80,7 +97,7 @@ test("organiza tareas por sección y combina permisos sin duplicar accesos", () 
   assert.deepEqual(result, [
     ['Principal', ['Inicio']],
     ['Comercial', ['Clientes', 'Catálogo', 'Cotizaciones']],
-    ['Operación', ['Logística', 'Planta', 'Calidad']],
+    ['Operación', ['Logística', 'Conductores', 'Planta', 'Calidad']],
     ['Gestión', ['Solicitudes de anulación', 'Usuarios']],
     ['Documentos', ['Plantillas', 'Sellos']],
   ]);

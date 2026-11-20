@@ -64,9 +64,9 @@ test('certificate prints frozen materials, dates and people without ICONTEC/QR/v
   assert.match(html,/<div[^>]*data-stamp-box[^>]*><\/div>/);
   assert.equal((html.match(/data-technical-row=/g)||[]).length,10);
 });
-test('quotation uses its frozen seal and the same persisted IVA label in totals and note',()=>{
+test('quotation uses its frozen seal and persisted IVA label without a pre-tax note',()=>{
   const {CotizacionPDF}=load(path.join(root,'components/pdf/CotizacionPDF.tsx'));
-  const html=renderToStaticMarkup(React.createElement(CotizacionPDF,{data:{tipo_servicio:'INDUSTRIAL_ETO',fecha:'2026-11-09',consecutivo:'COT-IND-001',iva_tasa:'0.05',subtotal:100,iva:5,total:105,items:[],sellos:{icontec:{imagen_src:'/internal/pdf-assets/sellos/frozen.jpg'}}}}));
+  const html=renderToStaticMarkup(React.createElement(CotizacionPDF,{data:{tipo_servicio:'INDUSTRIAL_ETO',fecha:'2026-11-09',consecutivo:'COT-IND-001',iva_tasa:'0.05',subtotal:25000,valor_transporte:15000,iva:1250,total:26250,items:[],sellos:{icontec:{imagen_src:'/internal/pdf-assets/sellos/frozen.jpg'}}}}));
   assert.match(html,/data-pdf-schema-version="2"/);assert.match(html,/src="\/internal\/pdf-assets\/sellos\/frozen.jpg"/);
-  assert.match(html,/Precios antes de IVA \(5%\)/);assert.doesNotMatch(html,/19%|certificaciones-icontec-iqnet.jpeg/);
+  assert.match(html,/IVA \(5%\)/);assert.ok(html.indexOf("SUBTOTAL") < html.indexOf("TRANSPORTE"));assert.match(html,/10\.000/);assert.match(html,/15\.000/);assert.match(html,/26\.250/);assert.doesNotMatch(html,/Precios antes de IVA|19%|certificaciones-icontec-iqnet.jpeg/);
 });
